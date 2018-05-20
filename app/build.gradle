@@ -27,5 +27,6 @@ dependencies {
     compileOnly 'com.google.android.things:androidthings:+'
     implementation 'com.github.felHR85:UsbSerial:4.5.2'
     implementation 'com.google.firebase:firebase-core:15.0.2'
+    implementation 'com.google.firebase:firebase-database:15.0.0'
 }
 apply plugin: 'com.google.gms.google-services'
