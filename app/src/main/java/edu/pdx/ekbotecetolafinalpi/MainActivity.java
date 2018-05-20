@@ -21,7 +21,7 @@ public class MainActivity extends Activity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int USB_VENDOR_ID = 0x2341; // 9025
-    private static final int USB_PRODUCT_ID = 0x0001;
+    private static final int USB_PRODUCT_ID = 0x0043; //67
 
     private UsbManager usbManager;
     private UsbDeviceConnection connection;
