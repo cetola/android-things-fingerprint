@@ -11,10 +11,13 @@ import com.google.android.things.pio.UartDevice;
 import com.google.android.things.pio.UartDeviceCallback;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+
+import edu.pdx.ekbotecetolafinalpi.Uart.Command;
+import edu.pdx.ekbotecetolafinalpi.Uart.CommandList;
+import edu.pdx.ekbotecetolafinalpi.Uart.Response;
+import edu.pdx.ekbotecetolafinalpi.Uart.UartUtils;
 
 public class MainActivity extends Activity {
 
@@ -59,21 +62,11 @@ public class MainActivity extends Activity {
             Log.e(TAG, "Unable to open UART device", e);
 
         }
-        ByteBuffer b = ByteBuffer.allocate(12);
-        b.putChar((char)0x55AA);
-        b.putChar((char)0x0100);
-        b.putChar((char)0);
-        b.putChar((char)0);
-        b.putChar((char)1);
-        b.putChar((char)(0x55 + 0xAA + 1 + 1));
-        try {
-            Log.d(TAG, "onCreate: Write to UART: " + bytesToHex(b.array(), null));
-            Log.d(TAG, "onCreate: Length: " + b.array().length);
-            uartDevice.write(b.array(), b.array().length);
-        } catch (IOException e) {
-            Log.e(TAG, "onCreate: Well that didn't work.");
-            e.printStackTrace();
-        }
+        Command c = new Command();
+        c.setParams(0);
+        c.setCmd(CommandList.Open);
+        Log.d(TAG, "onCreate: Write to UART: " + c.toString());
+        c.sendCommand(uartDevice);
     }
 
     private Runnable mTransferUartRunnable = new Runnable() {
@@ -125,29 +118,26 @@ public class MainActivity extends Activity {
 
     private void readData() {
         if (uartDevice != null) {
-            // Loop until there is no more data in the RX buffer.
+            Response resp = new Response();
             try {
                 byte[] buffer = new byte[CHUNK_SIZE];
                 int read;
                 while ((read = uartDevice.read(buffer, buffer.length)) > 0) {
-                    Log.d(TAG, "readData: " + bytesToHex(buffer, read));
-                    Log.d(TAG, "read val: " + read);
+                    Log.i(TAG, "readData: " + UartUtils.bytesToHex(buffer, read) + " size " + read);
+                    resp.addBytes(Arrays.copyOfRange(buffer, 0, read));
                 }
             } catch (IOException e) {
                 Log.w(TAG, "Unable to transfer data over UART", e);
             }
+            if(!resp.isEmpty()) {
+                Log.i(TAG, "readData: Got reponse: " + resp.toString());
+                if(!resp.getAck()) {
+                    Log.e(TAG, "readData: NACK!");
+                    Log.d(TAG, "readData: ERROR TEXT: " + resp.getError());
+                } else {
+                    Log.d(TAG, "readData: ACK!");
+                }
+            }
         }
-    }
-
-    private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
-    public static String bytesToHex(byte[] bytes, Integer length) {
-        int l = (length == null)? bytes.length : length;
-        char[] hexChars = new char[l * 2];
-        for ( int j = 0; j < l; j++ ) {
-            int v = bytes[j] & 0xFF;
-            hexChars[j * 2] = hexArray[v >>> 4];
-            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-        }
-        return new String(hexChars);
     }
 }
