@@ -25,7 +25,6 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     compileOnly 'com.google.android.things:androidthings:+'
-    implementation 'com.github.felHR85:UsbSerial:4.5.2'
     implementation 'com.google.firebase:firebase-core:15.0.2'
     implementation 'com.google.firebase:firebase-database:15.0.0'
 }

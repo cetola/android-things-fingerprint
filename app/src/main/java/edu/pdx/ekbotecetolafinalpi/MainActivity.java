@@ -1,146 +1,153 @@
 package edu.pdx.ekbotecetolafinalpi;
 
 import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.hardware.usb.UsbDevice;
-import android.hardware.usb.UsbDeviceConnection;
-import android.hardware.usb.UsbManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.util.Log;
 
-import com.felhr.usbserial.UsbSerialDevice;
-import com.felhr.usbserial.UsbSerialInterface;
+import com.google.android.things.pio.PeripheralManager;
+import com.google.android.things.pio.UartDevice;
+import com.google.android.things.pio.UartDeviceCallback;
 
-import java.io.UnsupportedEncodingException;
-import java.util.Map;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends Activity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
-    private static final int USB_VENDOR_ID = 0x2341; // 9025
-    private static final int USB_PRODUCT_ID = 0x0043; //67
+    private PeripheralManager pm;
+    // UART Configuration Parameters
+    private static final int BAUD_RATE = 9600;
+    private static final int DATA_BITS = 8;
+    private static final int STOP_BITS = 1;
 
-    private UsbManager usbManager;
-    private UsbDeviceConnection connection;
-    private UsbSerialDevice serialDevice;
-    private String buffer = "";
+    private static final int CHUNK_SIZE = 512;
 
-    private UsbSerialInterface.UsbReadCallback callback = new UsbSerialInterface.UsbReadCallback() {
-        @Override
-        public void onReceivedData(byte[] data) {
-            try {
-                String dataUtf8 = new String(data, "UTF-8");
-                buffer += dataUtf8;
-                int index;
-                while ((index = buffer.indexOf('\n')) != -1) {
-                    final String dataStr = buffer.substring(0, index + 1).trim();
-                    buffer = buffer.length() == index ? "" : buffer.substring(index + 1);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            onSerialDataReceived(dataStr);
-                        }
-                    });
-                }
-            } catch (UnsupportedEncodingException e) {
-                Log.e(TAG, "Error receiving USB data", e);
-            }
-        }
-    };
+    private HandlerThread mInputThread;
+    private Handler mInputHandler;
 
-    private final BroadcastReceiver usbDetachedReceiver = new BroadcastReceiver() {
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-
-            if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-                UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-                if (device != null && device.getVendorId() == USB_VENDOR_ID && device.getProductId() == USB_PRODUCT_ID) {
-                    Log.i(TAG, "USB device detached");
-                    stopUsbConnection();
-                }
-            }
-        }
-    };
+    private UartDevice uartDevice;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        usbManager = getSystemService(UsbManager.class);
+        Log.d(TAG, "UART Start");
 
-        // Detach events are sent as a system-wide broadcast
-        IntentFilter filter = new IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED);
-        registerReceiver(usbDetachedReceiver, filter);
-    }
+        // Create a background looper thread for I/O
+        mInputThread = new HandlerThread("InputThread");
+        mInputThread.start();
+        mInputHandler = new Handler(mInputThread.getLooper());
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        startUsbConnection();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        unregisterReceiver(usbDetachedReceiver);
-        stopUsbConnection();
-    }
-
-    private void startUsbConnection() {
-        Map<String, UsbDevice> connectedDevices = usbManager.getDeviceList();
-
-        if (!connectedDevices.isEmpty()) {
-            for (UsbDevice device : connectedDevices.values()) {
-                if (device.getVendorId() == USB_VENDOR_ID && device.getProductId() == USB_PRODUCT_ID) {
-                    Log.i(TAG, "Device found: " + device.getDeviceName());
-                    startSerialConnection(device);
-                    return;
-                }
-            }
-        }
-        Log.w(TAG, "Could not start USB connection - No devices found");
-    }
-
-    private void startSerialConnection(UsbDevice device) {
-        Log.i(TAG, "Ready to open USB device connection");
-        connection = usbManager.openDevice(device);
-        serialDevice = UsbSerialDevice.createUsbSerialDevice(device, connection);
-        if (serialDevice != null) {
-            if (serialDevice.open()) {
-                serialDevice.setBaudRate(115200);
-                serialDevice.setDataBits(UsbSerialInterface.DATA_BITS_8);
-                serialDevice.setStopBits(UsbSerialInterface.STOP_BITS_1);
-                serialDevice.setParity(UsbSerialInterface.PARITY_NONE);
-                serialDevice.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
-                serialDevice.read(callback);
-                Log.i(TAG, "Serial connection opened");
-            } else {
-                Log.w(TAG, "Cannot open serial connection");
-            }
+        pm = PeripheralManager.getInstance();
+        List<String> deviceList = pm.getUartDeviceList();
+        if (deviceList.isEmpty()) {
+            Log.i(TAG, "No UART port available on this device.");
         } else {
-            Log.w(TAG, "Could not create Usb Serial Device");
+            Log.i(TAG, "List of available devices: " + deviceList);
         }
-    }
 
-    private void onSerialDataReceived(String data) {
-        // Add whatever you want here
-        Log.i(TAG, "Serial data received: " + data);
-    }
-
-    private void stopUsbConnection() {
+        // Attempt to access the UART device
         try {
-            if (serialDevice != null) {
-                serialDevice.close();
-            }
+            openUart("USB1-1.4:1.0", BAUD_RATE);
+            // Read any initially buffered data
+            mInputHandler.post(mTransferUartRunnable);
+        } catch (IOException e) {
+            Log.e(TAG, "Unable to open UART device", e);
 
-            if (connection != null) {
-                connection.close();
-            }
-        } finally {
-            serialDevice = null;
-            connection = null;
         }
+        ByteBuffer b = ByteBuffer.allocate(12);
+        b.putChar((char)0x55AA);
+        b.putChar((char)0x0100);
+        b.putChar((char)0);
+        b.putChar((char)0);
+        b.putChar((char)1);
+        b.putChar((char)(0x55 + 0xAA + 1 + 1));
+        try {
+            Log.d(TAG, "onCreate: Write to UART: " + bytesToHex(b.array(), null));
+            Log.d(TAG, "onCreate: Length: " + b.array().length);
+            uartDevice.write(b.array(), b.array().length);
+        } catch (IOException e) {
+            Log.e(TAG, "onCreate: Well that didn't work.");
+            e.printStackTrace();
+        }
+    }
+
+    private Runnable mTransferUartRunnable = new Runnable() {
+        @Override
+        public void run() {
+            readData();
+        }
+    };
+
+    /**
+     * Access and configure the requested UART device for 8N1.
+     *
+     * @param name Name of the UART peripheral device to open.
+     * @param baudRate Data transfer rate. Should be a standard UART baud,
+     *                 such as 9600, 19200, 38400, 57600, 115200, etc.
+     *
+     * @throws IOException if an error occurs opening the UART port.
+     */
+    private void openUart(String name, int baudRate) throws IOException {
+        Log.d(TAG, "openUart: opening");
+        uartDevice = PeripheralManager.getInstance().openUartDevice(name);
+        // Configure the UART
+        uartDevice.setBaudrate(baudRate);
+        uartDevice.setDataSize(DATA_BITS);
+        uartDevice.setParity(UartDevice.PARITY_NONE);
+        uartDevice.setStopBits(STOP_BITS);
+        uartDevice.setHardwareFlowControl(UartDevice.HW_FLOW_CONTROL_NONE);
+
+        uartDevice.registerUartDeviceCallback(mInputHandler, mCallback);
+    }
+
+    /**
+     * Callback invoked when UART receives new incoming data.
+     */
+    private UartDeviceCallback mCallback = new UartDeviceCallback() {
+        @Override
+        public boolean onUartDeviceDataAvailable(UartDevice uart) {
+            readData();
+            //Continue listening for more interrupts
+            return true;
+        }
+
+        @Override
+        public void onUartDeviceError(UartDevice uart, int error) {
+            Log.w(TAG, uart + ": Error event " + error);
+        }
+    };
+
+
+    private void readData() {
+        if (uartDevice != null) {
+            // Loop until there is no more data in the RX buffer.
+            try {
+                byte[] buffer = new byte[CHUNK_SIZE];
+                int read;
+                while ((read = uartDevice.read(buffer, buffer.length)) > 0) {
+                    Log.d(TAG, "readData: " + bytesToHex(buffer, read));
+                    Log.d(TAG, "read val: " + read);
+                }
+            } catch (IOException e) {
+                Log.w(TAG, "Unable to transfer data over UART", e);
+            }
+        }
+    }
+
+    private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
+    public static String bytesToHex(byte[] bytes, Integer length) {
+        int l = (length == null)? bytes.length : length;
+        char[] hexChars = new char[l * 2];
+        for ( int j = 0; j < l; j++ ) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = hexArray[v >>> 4];
+            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+        }
+        return new String(hexChars);
     }
 }
