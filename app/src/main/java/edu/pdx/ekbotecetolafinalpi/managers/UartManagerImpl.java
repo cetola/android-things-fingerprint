@@ -8,11 +8,11 @@ import com.google.android.things.pio.UartDeviceCallback;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import edu.pdx.ekbotecetolafinalpi.account.DeviceInfo;
 import edu.pdx.ekbotecetolafinalpi.uart.Command;
 import edu.pdx.ekbotecetolafinalpi.uart.DataPacket;
 import edu.pdx.ekbotecetolafinalpi.uart.Message;
@@ -29,9 +29,12 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
     private PeripheralManager pm;
     private static final int CHUNK_SIZE = 512;
     private ByteArrayOutputStream data = new ByteArrayOutputStream();
+    //TODO: not sure if these need to be volatile
     public volatile boolean waiting = false;
     public volatile int waitCount = 0;
     private int oldDataSize;
+    private DeviceInfo info;
+    private Response response;
 
     public UartManagerImpl() {
         super();
@@ -45,7 +48,6 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
         @Override
         public boolean onUartDeviceDataAvailable(UartDevice uart) {
             readData();
-            //Continue listening for more interrupts
             return true;
         }
 
@@ -134,16 +136,28 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
 
     private void processDataPacket() {
         Response rsp = new Response();
-        DataPacket dp;
-        rsp.addBytes(Arrays.copyOfRange(data.toByteArray(), 0, Message.MSG_SIZE - 1));
+        rsp.addRangeBytes(data.toByteArray(), 0, Message.MSG_SIZE - 1);
         checkResponse(rsp);
-        if((data.size() - Message.MSG_SIZE) == DataPacket.MOD_INFO_SIZE) {
-            dp = new DataPacket(DataPacket.MOD_INFO_SIZE);
-            dp.addBytes(Arrays.copyOfRange(data.toByteArray(), Message.MSG_SIZE, (DataPacket.MOD_INFO_SIZE + Message.MSG_SIZE)));
-            Log.i(TAG, "processDataPacket: Got Info: " + dp.getInfo());
+        if(isDeviceInfo()) {
+            setDeviceInfo();
         } else {
-            Log.e(TAG, "processDataPacket: Unknown Data Size. Could not create DataPacket.");
+            Log.e(TAG, "processDataPacket: Unknown Data Size: " + data.size() + ". Could not create DataPacket.");
         }
+    }
+
+    private boolean isDeviceInfo() {
+        return (data.size() - Message.MSG_SIZE) == DataPacket.MOD_INFO_SIZE;
+    }
+
+    private void setDeviceInfo() {
+        DataPacket dp;
+        dp = new DataPacket(DataPacket.MOD_INFO_SIZE);
+        dp.addRangeBytes(data.toByteArray(), Message.MSG_SIZE, (DataPacket.MOD_INFO_SIZE + Message.MSG_SIZE));
+        info = dp.getDeviceInfo();
+    }
+
+    public DeviceInfo getDeviceInfo() {
+        return this.info;
     }
 
     private void checkResponse(Response rsp) {
@@ -154,8 +168,14 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
                 Log.d(TAG, "checkResponse: ERROR TEXT: " + rsp.getError());
             } else {
                 Log.d(TAG, "checkResponse: ACK!");
+                Log.d(TAG, "checkResponse: params: " + rsp.getParams());
             }
         }
+        response = rsp;
+    }
+
+    public Response getResponse() {
+        return this.response;
     }
 
     @Override

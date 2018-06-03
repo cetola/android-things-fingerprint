@@ -9,30 +9,22 @@ import java.io.IOException;
 public class Command extends Message {
 
     private static final String TAG = "Command";
-    private static final int PARAM_OFFSET = 4;
-    private static final int PARAM_LENGTH = 4;
     private static final int CMD_OFFSET = 8;
     private static final int CHKSUM_OFFSET = 10;
 
-    private byte[] params;
     private char cmd;
     private char checksum;
 
-    public Command() {
+    public Command(int params, char cmd) {
         super();
-        params = new byte[4];
-        getData().putChar(Message.START_CODE);
-        getData().putChar(Message.DEVICE_ID);
+        setup();
+        setParams(params);
+        setCmd(cmd);
     }
 
-    public void setParams(int in) {
-        params[0] = (byte)(in & 0x000000ff);
-        params[1] = (byte)((in & 0x0000ff00) >> 8);
-        params[2] = (byte)((in & 0x00ff0000) >> 16);
-        params[3] = (byte)((in & 0xff000000) >> 24);
-        for(int i=0; i < PARAM_LENGTH; i++) {
-            getData().put(PARAM_OFFSET + i, params[i]);
-        }
+    private void setup() {
+        getData().putChar(Message.START_CODE);
+        getData().putChar(Message.DEVICE_ID);
     }
 
     public void setCmd(char c) {
