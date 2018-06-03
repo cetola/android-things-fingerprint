@@ -14,6 +14,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import edu.pdx.ekbotecetolafinalpi.Uart.Command;
 import edu.pdx.ekbotecetolafinalpi.Uart.CommandList;
@@ -26,17 +28,19 @@ public class MainActivity extends Activity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private PeripheralManager pm;
-    // UART Configuration Parameters
+    //TODO: create a uart device manager
     private static final int BAUD_RATE = 9600;
     private static final int DATA_BITS = 8;
     private static final int STOP_BITS = 1;
 
     private static final int CHUNK_SIZE = 512;
-    private ByteArrayOutputStream data;
+    private ByteArrayOutputStream data = new ByteArrayOutputStream();
+    private int oldDataSize;
 
     private HandlerThread mInputThread;
     private Handler mInputHandler;
 
+    //TODO: watch this device. We don't want people sending messages when we are receiving. (manager)
     private UartDevice uartDevice;
 
     @Override
@@ -136,49 +140,83 @@ public class MainActivity extends Activity {
         if (uartDevice != null) {
             try {
                 byte[] buffer = new byte[CHUNK_SIZE];
-                data = new ByteArrayOutputStream();
                 int read;
                 while ((read = uartDevice.read(buffer, buffer.length)) > 0) {
-                    Log.i(TAG, "readData: " + UartUtils.bytesToHex(buffer, read) + " size " + read);
+                    //Log.i(TAG, "readData: " + UartUtils.bytesToHex(buffer, read) + " size " + read);
                     data.write(buffer, 0, read);
                 }
             } catch (IOException e) {
                 Log.w(TAG, "Unable to transfer data over UART", e);
             }
-            if(data.size() != 0) {
-                processData();
+            if(data.size() > 0) {
+                waitForData();
             }
         }
     }
 
-    private void processData() {
-        Response resp = new Response();
-        DataPacket dp;
-        Log.i(TAG, "readData: data size: " + data.size());
-        Log.i(TAG, "readData: data: " + UartUtils.bytesToHex(data.toByteArray(), data.size()));
-        if(data.size() == Message.MSG_SIZE) {
-            //response
-            resp.addBytes(data.toByteArray());
-        } else if(data.size() > Message.MSG_SIZE) {
-            //data
-            Log.d(TAG, "processData: DATA!!!");
-            resp.addBytes(Arrays.copyOfRange(data.toByteArray(), 0, Message.MSG_SIZE - 1));
-            if((data.size() - Message.MSG_SIZE) == DataPacket.MOD_INFO_SIZE) {
-                dp = new DataPacket(DataPacket.MOD_INFO_SIZE);
-                dp.addBytes(Arrays.copyOfRange(data.toByteArray(), Message.MSG_SIZE, (DataPacket.MOD_INFO_SIZE + Message.MSG_SIZE)));
-                Log.i(TAG, "processData: Got Info: " + dp.getInfo());
+    //TODO: think about this.
+    //My guess is that when we transfer huge data (jpg) this will be nessesary
+    private void waitForData() {
+        Log.d(TAG, "waitForData: WAIT");
+        oldDataSize = data.size();
+        new Timer().schedule(new TimerTask() {
+            public void run() {
+                checkDataSize();
             }
+        }, 500);
+    }
+
+    private void checkDataSize() {
+        Log.d(TAG, "checkDataSize: CHECK");
+        if(data.size() > oldDataSize) {
+            waitForData();
+        } else {
+            process();
+            data.reset();
+        }
+    }
+
+    private void process() {
+        Log.d(TAG, "process: data size: " + data.size());
+        Log.d(TAG, "process: data: " + UartUtils.bytesToHex(data.toByteArray(), data.size()));
+        if(data.size() == Message.MSG_SIZE) {
+            processResponse();
+        } else if(data.size() > Message.MSG_SIZE) {
+            processDataPacket();
         } else {
             //wtf?
-            Log.e(TAG, "readData: saw package of strange size.");
+            Log.e(TAG, "process: saw package of strange size.");
         }
-        if(!resp.isEmpty()) {
-            Log.i(TAG, "readData: Got reponse: " + resp.toString());
-            if(!resp.getAck()) {
-                Log.e(TAG, "readData: NACK!");
-                Log.d(TAG, "readData: ERROR TEXT: " + resp.getError());
+    }
+
+    private void processResponse() {
+        Response rsp = new Response();
+        rsp.addBytes(data.toByteArray());
+        checkResponse(rsp);
+    }
+
+    private void processDataPacket() {
+        Response rsp = new Response();
+        DataPacket dp;
+        rsp.addBytes(Arrays.copyOfRange(data.toByteArray(), 0, Message.MSG_SIZE - 1));
+        checkResponse(rsp);
+        if((data.size() - Message.MSG_SIZE) == DataPacket.MOD_INFO_SIZE) {
+            dp = new DataPacket(DataPacket.MOD_INFO_SIZE);
+            dp.addBytes(Arrays.copyOfRange(data.toByteArray(), Message.MSG_SIZE, (DataPacket.MOD_INFO_SIZE + Message.MSG_SIZE)));
+            Log.i(TAG, "processDataPacket: Got Info: " + dp.getInfo());
+        } else {
+            Log.e(TAG, "processDataPacket: Unknown Data Size. Could not create DataPacket.");
+        }
+    }
+
+    private void checkResponse(Response rsp) {
+        if(!rsp.isEmpty()) {
+            Log.i(TAG, "checkResponse: Got reponse: " + rsp.toString());
+            if(!rsp.getAck()) {
+                Log.e(TAG, "checkResponse: NACK!");
+                Log.d(TAG, "checkResponse: ERROR TEXT: " + rsp.getError());
             } else {
-                Log.d(TAG, "readData: ACK!");
+                Log.d(TAG, "checkResponse: ACK!");
             }
         }
     }
