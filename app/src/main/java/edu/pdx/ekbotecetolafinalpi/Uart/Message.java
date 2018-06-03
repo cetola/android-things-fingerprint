@@ -8,16 +8,18 @@ import java.nio.ByteOrder;
 public class Message {
     private static final String TAG = "Message";
     public static final int MSG_SIZE = 12;
-    public static final char START_CODE = 0x55AA;
-    public static final char DEVICE_ID = 0x0100;
+    public static final char START_CODE = 0xAA55;
+    public static final char DEVICE_ID = 0x0001;
 
     private ByteBuffer data;
 
     public Message() {
         data = ByteBuffer.allocate(MSG_SIZE);
+        this.data.order(ByteOrder.LITTLE_ENDIAN);
     }
 
-    protected void setLittleEnd() {
+    public Message(int size) {
+        data = ByteBuffer.allocate(size);
         this.data.order(ByteOrder.LITTLE_ENDIAN);
     }
 

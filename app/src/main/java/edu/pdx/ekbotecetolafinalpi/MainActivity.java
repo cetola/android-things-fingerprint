@@ -10,12 +10,15 @@ import com.google.android.things.pio.PeripheralManager;
 import com.google.android.things.pio.UartDevice;
 import com.google.android.things.pio.UartDeviceCallback;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
 import edu.pdx.ekbotecetolafinalpi.Uart.Command;
 import edu.pdx.ekbotecetolafinalpi.Uart.CommandList;
+import edu.pdx.ekbotecetolafinalpi.Uart.DataPacket;
+import edu.pdx.ekbotecetolafinalpi.Uart.Message;
 import edu.pdx.ekbotecetolafinalpi.Uart.Response;
 import edu.pdx.ekbotecetolafinalpi.Uart.UartUtils;
 
@@ -29,6 +32,7 @@ public class MainActivity extends Activity {
     private static final int STOP_BITS = 1;
 
     private static final int CHUNK_SIZE = 512;
+    private ByteArrayOutputStream data;
 
     private HandlerThread mInputThread;
     private Handler mInputHandler;
@@ -39,31 +43,43 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "UART Start");
-
-        // Create a background looper thread for I/O
-        mInputThread = new HandlerThread("InputThread");
-        mInputThread.start();
-        mInputHandler = new Handler(mInputThread.getLooper());
-
         pm = PeripheralManager.getInstance();
+        listUartDevices();
+        createLooperThread();
+        //TODO: get this dynamically
+        openUsbUart("USB1-1.4:1.0");
+        sendTestCommand();
+    }
+
+    private void listUartDevices() {
         List<String> deviceList = pm.getUartDeviceList();
         if (deviceList.isEmpty()) {
             Log.i(TAG, "No UART port available on this device.");
         } else {
             Log.i(TAG, "List of available devices: " + deviceList);
         }
+    }
 
-        // Attempt to access the UART device
+    private void openUsbUart(String uartName) {
         try {
-            openUart("USB1-1.4:1.0", BAUD_RATE);
-            // Read any initially buffered data
+            openUart(uartName, BAUD_RATE);
             mInputHandler.post(mTransferUartRunnable);
         } catch (IOException e) {
             Log.e(TAG, "Unable to open UART device", e);
 
         }
+    }
+
+    private void createLooperThread() {
+        // Create a background looper thread for I/O
+        mInputThread = new HandlerThread("InputThread");
+        mInputThread.start();
+        mInputHandler = new Handler(mInputThread.getLooper());
+    }
+
+    private void sendTestCommand() {
         Command c = new Command();
-        c.setParams(0);
+        c.setParams(1);
         c.setCmd(CommandList.Open);
         Log.d(TAG, "onCreate: Write to UART: " + c.toString());
         c.sendCommand(uartDevice);
@@ -118,25 +134,51 @@ public class MainActivity extends Activity {
 
     private void readData() {
         if (uartDevice != null) {
-            Response resp = new Response();
             try {
                 byte[] buffer = new byte[CHUNK_SIZE];
+                data = new ByteArrayOutputStream();
                 int read;
                 while ((read = uartDevice.read(buffer, buffer.length)) > 0) {
                     Log.i(TAG, "readData: " + UartUtils.bytesToHex(buffer, read) + " size " + read);
-                    resp.addBytes(Arrays.copyOfRange(buffer, 0, read));
+                    data.write(buffer, 0, read);
                 }
             } catch (IOException e) {
                 Log.w(TAG, "Unable to transfer data over UART", e);
             }
-            if(!resp.isEmpty()) {
-                Log.i(TAG, "readData: Got reponse: " + resp.toString());
-                if(!resp.getAck()) {
-                    Log.e(TAG, "readData: NACK!");
-                    Log.d(TAG, "readData: ERROR TEXT: " + resp.getError());
-                } else {
-                    Log.d(TAG, "readData: ACK!");
-                }
+            if(data.size() != 0) {
+                processData();
+            }
+        }
+    }
+
+    private void processData() {
+        Response resp = new Response();
+        DataPacket dp;
+        Log.i(TAG, "readData: data size: " + data.size());
+        Log.i(TAG, "readData: data: " + UartUtils.bytesToHex(data.toByteArray(), data.size()));
+        if(data.size() == Message.MSG_SIZE) {
+            //response
+            resp.addBytes(data.toByteArray());
+        } else if(data.size() > Message.MSG_SIZE) {
+            //data
+            Log.d(TAG, "processData: DATA!!!");
+            resp.addBytes(Arrays.copyOfRange(data.toByteArray(), 0, Message.MSG_SIZE - 1));
+            if((data.size() - Message.MSG_SIZE) == DataPacket.MOD_INFO_SIZE) {
+                dp = new DataPacket(DataPacket.MOD_INFO_SIZE);
+                dp.addBytes(Arrays.copyOfRange(data.toByteArray(), Message.MSG_SIZE, (DataPacket.MOD_INFO_SIZE + Message.MSG_SIZE)));
+                Log.i(TAG, "processData: Got Info: " + dp.getInfo());
+            }
+        } else {
+            //wtf?
+            Log.e(TAG, "readData: saw package of strange size.");
+        }
+        if(!resp.isEmpty()) {
+            Log.i(TAG, "readData: Got reponse: " + resp.toString());
+            if(!resp.getAck()) {
+                Log.e(TAG, "readData: NACK!");
+                Log.d(TAG, "readData: ERROR TEXT: " + resp.getError());
+            } else {
+                Log.d(TAG, "readData: ACK!");
             }
         }
     }

@@ -11,7 +11,6 @@ public class Response extends Message {
 
     public Response() {
         super();
-        setLittleEnd();
     }
 
     public boolean getAck() {

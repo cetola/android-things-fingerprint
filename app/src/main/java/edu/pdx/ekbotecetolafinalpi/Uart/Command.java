@@ -31,7 +31,7 @@ public class Command extends Message {
         params[2] = (byte)((in & 0x00ff0000) >> 16);
         params[3] = (byte)((in & 0xff000000) >> 24);
         for(int i=0; i < PARAM_LENGTH; i++) {
-            getData().put(PARAM_OFFSET+i, params[i]);
+            getData().put(PARAM_OFFSET + i, params[i]);
         }
     }
 
