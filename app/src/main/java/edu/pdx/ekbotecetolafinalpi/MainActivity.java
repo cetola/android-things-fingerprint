@@ -18,11 +18,17 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "UART Start");
         uartManager = new UartManagerImpl();
         List<String> devices = uartManager.getDeviceList();
+        String myDevice = "";
+        for(String device : devices) {
+            Log.d(TAG, "onCreate: Found USB UART: " + device);
+            if(device.contains("USB1")) {
+                myDevice = device;
+            }
+        }
         //TODO: get this dynamically
-        uartManager.openUsbUart("USB1-1.4:1.0");
+        uartManager.openUsbUart(myDevice);
         sendTestCommand();
     }
 
@@ -30,7 +36,6 @@ public class MainActivity extends Activity {
         Command c = new Command();
         c.setParams(1);
         c.setCmd(CommandList.Open);
-        Log.d(TAG, "onCreate: Write to UART: " + c.toString());
         uartManager.sendCommand(c);
     }
 }
