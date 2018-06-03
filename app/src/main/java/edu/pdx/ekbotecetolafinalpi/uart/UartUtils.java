@@ -1,4 +1,4 @@
-package edu.pdx.ekbotecetolafinalpi.Uart;
+package edu.pdx.ekbotecetolafinalpi.uart;
 
 public class UartUtils {
     private final static char[] hexArray = "0123456789ABCDEF".toCharArray();

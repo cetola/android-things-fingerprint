@@ -1,4 +1,4 @@
-package edu.pdx.ekbotecetolafinalpi.Uart;
+package edu.pdx.ekbotecetolafinalpi.uart;
 
 import java.util.HashMap;
 import java.util.Map;

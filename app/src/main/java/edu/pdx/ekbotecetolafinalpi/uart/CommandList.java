@@ -1,4 +1,4 @@
-package edu.pdx.ekbotecetolafinalpi.Uart;
+package edu.pdx.ekbotecetolafinalpi.uart;
 
 public class CommandList {
     public static final Character NotSet                 = 0x00;        // Default value for enum. Scanner will return error if sent this.

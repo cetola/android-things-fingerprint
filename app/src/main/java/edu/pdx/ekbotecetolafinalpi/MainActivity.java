@@ -17,12 +17,12 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import edu.pdx.ekbotecetolafinalpi.Uart.Command;
-import edu.pdx.ekbotecetolafinalpi.Uart.CommandList;
-import edu.pdx.ekbotecetolafinalpi.Uart.DataPacket;
-import edu.pdx.ekbotecetolafinalpi.Uart.Message;
-import edu.pdx.ekbotecetolafinalpi.Uart.Response;
-import edu.pdx.ekbotecetolafinalpi.Uart.UartUtils;
+import edu.pdx.ekbotecetolafinalpi.uart.Command;
+import edu.pdx.ekbotecetolafinalpi.uart.CommandList;
+import edu.pdx.ekbotecetolafinalpi.uart.DataPacket;
+import edu.pdx.ekbotecetolafinalpi.uart.Message;
+import edu.pdx.ekbotecetolafinalpi.uart.Response;
+import edu.pdx.ekbotecetolafinalpi.uart.UartUtils;
 
 public class MainActivity extends Activity {
 

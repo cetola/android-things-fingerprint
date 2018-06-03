@@ -1,4 +1,4 @@
-package edu.pdx.ekbotecetolafinalpi.Uart;
+package edu.pdx.ekbotecetolafinalpi.uart;
 
 public class Response extends Message {
     private static final String TAG = "Response";
