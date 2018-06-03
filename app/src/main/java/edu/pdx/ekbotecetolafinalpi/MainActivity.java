@@ -32,6 +32,8 @@ public class MainActivity extends Activity {
     private static final int BAUD_RATE = 9600;
     private static final int DATA_BITS = 8;
     private static final int STOP_BITS = 1;
+    public volatile boolean waiting = false;
+    public volatile int waitCount = 0;
 
     private static final int CHUNK_SIZE = 512;
     private ByteArrayOutputStream data = new ByteArrayOutputStream();
@@ -136,6 +138,7 @@ public class MainActivity extends Activity {
     };
 
 
+    //TODO: using a ByteArrayOutputStream in a thread, is this wise?
     private void readData() {
         if (uartDevice != null) {
             try {
@@ -155,24 +158,34 @@ public class MainActivity extends Activity {
     }
 
     //TODO: think about this.
-    //My guess is that when we transfer huge data (jpg) this will be nessesary
+    //My guess is that when we transfer huge data (jpg) this will be necessary
     private void waitForData() {
-        Log.d(TAG, "waitForData: WAIT");
-        oldDataSize = data.size();
-        new Timer().schedule(new TimerTask() {
-            public void run() {
-                checkDataSize();
-            }
-        }, 500);
+        waitCount++;
+        if(!waiting) {
+            Log.d(TAG, "waitForData: WAIT");
+            oldDataSize = data.size();
+            waiting = true;
+            new Timer().schedule(new TimerTask() {
+                public void run() {
+                    checkDataSize();
+                }
+            }, 500);
+        } else {
+            Log.d(TAG, "waitForData: Already waiting: " + waitCount);
+        }
     }
 
     private void checkDataSize() {
         Log.d(TAG, "checkDataSize: CHECK");
         if(data.size() > oldDataSize) {
+            waiting = false;
+            waitCount = 0;
             waitForData();
         } else {
             process();
             data.reset();
+            waiting = false;
+            waitCount = 0;
         }
     }
 
