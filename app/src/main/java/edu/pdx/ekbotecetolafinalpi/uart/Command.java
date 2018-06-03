@@ -40,17 +40,7 @@ public class Command extends Message {
         getData().putChar(CMD_OFFSET, cmd);
     }
 
-    public void sendCommand(UartDevice d) {
-        setChecksum();
-        Log.i(TAG, "sendCommand: sending data: " + UartUtils.bytesToHex(getData().array(), getData().array().length));
-        try {
-            d.write(getData().array(), getData().array().length);
-        } catch (IOException e) {
-            Log.e(TAG, "sendCommand: unable to send command.", e);
-        }
-    }
-
-    private void setChecksum() {
+    public void setChecksum() {
         checksum = 0;
         for(int i = 0; i < 10; i++) {
             checksum += getData().get(i) & 0xff;
