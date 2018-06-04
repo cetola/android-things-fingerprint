@@ -1,5 +1,7 @@
 package edu.pdx.ekbotecetolafinalpi.uart;
 
+import java.util.concurrent.TimeUnit;
+
 public class UartUtils {
     private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
     public static String bytesToHex(byte[] bytes, Integer length) {
@@ -11,5 +13,14 @@ public class UartUtils {
             hexChars[j * 2 + 1] = hexArray[v & 0x0F];
         }
         return new String(hexChars);
+    }
+
+
+    public static void holdOnASec(int secs) {
+        try {
+            TimeUnit.SECONDS.sleep(secs);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

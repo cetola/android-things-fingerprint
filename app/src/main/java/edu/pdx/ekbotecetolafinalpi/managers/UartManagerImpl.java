@@ -14,6 +14,8 @@ import java.util.TimerTask;
 
 import edu.pdx.ekbotecetolafinalpi.account.DeviceInfo;
 import edu.pdx.ekbotecetolafinalpi.uart.Command;
+import edu.pdx.ekbotecetolafinalpi.uart.CommandList;
+import edu.pdx.ekbotecetolafinalpi.uart.CommandQueue;
 import edu.pdx.ekbotecetolafinalpi.uart.DataPacket;
 import edu.pdx.ekbotecetolafinalpi.uart.Message;
 import edu.pdx.ekbotecetolafinalpi.uart.Response;
@@ -29,16 +31,23 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
     private PeripheralManager pm;
     private static final int CHUNK_SIZE = 512;
     private ByteArrayOutputStream data = new ByteArrayOutputStream();
-    //TODO: not sure if these need to be volatile
-    public volatile boolean waiting = false;
-    public volatile int waitCount = 0;
+    private boolean waiting = false;
+    private int waitCount = 0;
     private int oldDataSize;
     private DeviceInfo info;
     private Response response;
+    CommandQueue q;
 
     public UartManagerImpl() {
         super();
         pm = PeripheralManager.getInstance();
+        q = new CommandQueue();
+
+        new Timer().schedule(new TimerTask() {
+            public void run() {
+                processQueue();
+            }
+        }, 500);
     }
 
     /**
@@ -157,6 +166,8 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
     }
 
     public DeviceInfo getDeviceInfo() {
+        queueCommand(new Command(1, CommandList.Open));
+        UartUtils.holdOnASec(1);
         return this.info;
     }
 
@@ -205,8 +216,18 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
     }
 
     @Override
-    public int sendCommand(Command cmd) {
-        cmd.setChecksum();
+    public int queueCommand(Command cmd) {
+        q.addCommand(cmd);
+        return q.getSize();
+    }
+
+    private void processQueue() {
+        if(q.getSize() > 0 && !waiting) {
+            sendCommand(q.getNextCommand());
+        }
+    }
+
+    private int sendCommand(Command cmd) {
         Log.i(TAG, "sendCommand: sending data: " + UartUtils.bytesToHex(cmd.getData().array(), cmd.getData().array().length));
         try {
             uartDevice.write(cmd.getData().array(), cmd.getData().array().length);
@@ -231,7 +252,6 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
         uartDevice.setParity(parity);
         uartDevice.setStopBits(stopBits);
         uartDevice.setHardwareFlowControl(UartDevice.HW_FLOW_CONTROL_NONE);
-
         uartDevice.registerUartDeviceCallback(getInputHandler(), callback);
     }
 }

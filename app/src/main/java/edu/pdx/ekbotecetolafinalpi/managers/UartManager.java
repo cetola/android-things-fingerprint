@@ -9,7 +9,7 @@ import edu.pdx.ekbotecetolafinalpi.uart.Response;
 public interface UartManager {
     List<String> getDeviceList();
     int openUsbUart(String name);
-    int sendCommand(Command cmd);
+    int queueCommand(Command cmd);
     DeviceInfo getDeviceInfo();
     Response getResponse();
 }

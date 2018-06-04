@@ -5,6 +5,7 @@ public class Response extends Message {
     private static final char ACK = 0x30;
     private static final int ACK_INDEX = 8;
     private static final int ERR_INDEX = 4;
+    private String commandId;
 
     private String error = "";
     private boolean ack = false;
@@ -33,5 +34,13 @@ public class Response extends Message {
             }
         }
         return true;
+    }
+
+    public String getCommandId() {
+        return commandId;
+    }
+
+    public void setCommandId(String commandId) {
+        this.commandId = commandId;
     }
 }

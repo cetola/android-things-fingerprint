@@ -2,10 +2,16 @@ package edu.pdx.ekbotecetolafinalpi.uart;
 
 import android.util.Log;
 
+import com.google.firebase.firestore.Exclude;
+import com.google.firebase.firestore.IgnoreExtraProperties;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Date;
 
+@IgnoreExtraProperties
 public class Message {
     private static final String TAG = "Message";
     public static final int MSG_SIZE = 12;
@@ -14,8 +20,10 @@ public class Message {
     private static final int PARAM_OFFSET = 4;
     private static final int PARAM_LENGTH = 4;
     private byte[] params;
-
+    private String id;
     private ByteBuffer data;
+    private String strData;
+    private Date created;
 
     public Message() {
         params = new byte[4];
@@ -31,18 +39,21 @@ public class Message {
     public void addBytes(byte[] d) {
         Log.d(TAG, "addBytes: " + UartUtils.bytesToHex(d, d.length));
         data.put(d);
+        updateStringData();
     }
 
     public void addRangeBytes(byte[] d, int start, int stop) {
         addBytes(Arrays.copyOfRange(d, start, stop));
     }
 
+    @Exclude
     public ByteBuffer getData() {
         return data;
     }
 
     public void setData(ByteBuffer data) {
         this.data = data;
+        updateStringData();
     }
 
     @Override
@@ -58,6 +69,7 @@ public class Message {
         for(int i=0; i < PARAM_LENGTH; i++) {
             getData().put(PARAM_OFFSET + i, params[i]);
         }
+        updateStringData();
     }
 
     public int getParams() {
@@ -67,5 +79,34 @@ public class Message {
         rtn = (rtn << 8) + params[1];
         rtn = (rtn << 8) + params[0];
         return rtn;
+    }
+
+    protected void updateStringData() {
+        this.strData = UartUtils.bytesToHex(data.array(), data.array().length);
+    }
+
+    @Exclude
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getStrData() {
+        return strData;
+    }
+
+    public void setStrData(String strData) {
+        this.strData = strData;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
     }
 }

@@ -9,6 +9,7 @@ public class DataPacket extends Message {
     public static final int MOD_INFO_SIZE = 30;
     private int size;
     private DeviceInfo deviceInfo;
+    private String commandId;
 
     public DataPacket(int size) {
         super(size);
@@ -55,5 +56,13 @@ public class DataPacket extends Message {
             default:
                 Log.e(TAG, "processData: Data Size Unknown. Cannot process data.");
         }
+    }
+
+    public String getCommandId() {
+        return commandId;
+    }
+
+    public void setCommandId(String commandId) {
+        this.commandId = commandId;
     }
 }

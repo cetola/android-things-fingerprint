@@ -1,5 +1,8 @@
 package edu.pdx.ekbotecetolafinalpi.uart;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class CommandList {
     public static final Character NotSet                 = 0x00;        // Default value for enum. Scanner will return error if sent this.
     public static final Character Open                   = 0x01;        // Open Initialization
@@ -33,4 +36,44 @@ public class CommandList {
     public static final Character UpgradeISOCDImage      = 0x81;        // Not supported
     public static final Character Ack                    = 0x30;        // Acknowledge.
     public static final Character Nack                   = 0x31;        // Non-acknowledge
+
+    public static final Map<Character, String> commandList = createMap();
+    private static Map<Character, String> createMap()
+    {
+        Map<Character,String> myMap = new HashMap<>();
+        myMap.put(NotSet, "NotSet");
+        myMap.put(Open, "Open");
+        myMap.put(Close, "Close");
+        myMap.put(UsbInternalCheck, "UsbInternalCheck");
+        myMap.put(ChangeBaudrate, "ChangeBaudrate");
+        myMap.put(SetIAPMode, "SetIAPMode");
+        myMap.put(CmosLed, "CmosLed");
+        myMap.put(GetEnrollCount, "GetEnrollCount");
+        myMap.put(CheckEnrolled, "CheckEnrolled");
+        myMap.put(EnrollStart, "EnrollStart");
+        myMap.put(Enroll1, "Enroll1");
+        myMap.put(Enroll2, "Enroll2");
+        myMap.put(Enroll3, "Enroll3");
+        myMap.put(IsPressFinger, "IsPressFinger");
+        myMap.put(DeleteID, "DeleteID");
+        myMap.put(DeleteAll, "DeleteAll");
+        myMap.put(Verify1_1, "Verify1_1");
+        myMap.put(Identify1_N, "Identify1_N");
+        myMap.put(VerifyTemplate1_1, "VerifyTemplate1_1");
+        myMap.put(IdentifyTemplate1_N, "IdentifyTemplate1_N");
+        myMap.put(CaptureFinger, "CaptureFinger");
+        myMap.put(MakeTemplate, "MakeTemplate");
+        myMap.put(GetImage, "GetImage");
+        myMap.put(GetRawImage, "GetRawImage");
+        myMap.put(GetTemplate, "GetTemplate");
+        myMap.put(SetTemplate, "SetTemplate");
+        myMap.put(GetDatabaseStart, "GetDatabaseStart");
+        myMap.put(GetDatabaseEnd, "GetDatabaseEnd");
+        myMap.put(UpgradeFirmware, "UpgradeFirmware");
+        myMap.put(UpgradeISOCDImage, "UpgradeISOCDImage");
+        myMap.put(Ack, "Ack");
+        myMap.put(Nack, "Nack");
+        return myMap;
+    }
+
 }
