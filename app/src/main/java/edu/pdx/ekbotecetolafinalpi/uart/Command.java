@@ -1,5 +1,7 @@
 package edu.pdx.ekbotecetolafinalpi.uart;
 
+import com.google.firebase.Timestamp;
+
 import java.util.Date;
 
 public class Command extends Message {
@@ -20,7 +22,7 @@ public class Command extends Message {
         setCmd(cmd);
         setChecksum();
         updateStringData();
-        setCreated(new Date());
+        setCreated(new Timestamp(new Date()));
     }
 
     private void setup() {

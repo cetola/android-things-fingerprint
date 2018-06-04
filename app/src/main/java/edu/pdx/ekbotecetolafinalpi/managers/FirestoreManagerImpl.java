@@ -3,6 +3,7 @@ package edu.pdx.ekbotecetolafinalpi.managers;
 import android.util.Log;
 
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -31,6 +32,10 @@ public class FirestoreManagerImpl implements FirestoreManager {
         Log.i(TAG,"Database initialization starting: " + dateFormat.format(date));
         try {
             db = FirebaseFirestore.getInstance();
+            FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                    .setTimestampsInSnapshotsEnabled(true)
+                    .build();
+            db.setFirestoreSettings(settings);
         } catch (Exception e) {
             throw new ConnectionFailedException();
         }

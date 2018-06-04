@@ -47,7 +47,7 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
             public void run() {
                 processQueue();
             }
-        }, 500);
+        }, 1000);
     }
 
     /**

@@ -2,14 +2,13 @@ package edu.pdx.ekbotecetolafinalpi.uart;
 
 import android.util.Log;
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Exclude;
 import com.google.firebase.firestore.IgnoreExtraProperties;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.Date;
 
 @IgnoreExtraProperties
 public class Message {
@@ -23,7 +22,7 @@ public class Message {
     private String id;
     private ByteBuffer data;
     private String strData;
-    private Date created;
+    private Timestamp created;
 
     public Message() {
         params = new byte[4];
@@ -102,11 +101,11 @@ public class Message {
         this.strData = strData;
     }
 
-    public Date getCreated() {
+    public Timestamp getCreated() {
         return created;
     }
 
-    public void setCreated(Date created) {
+    public void setCreated(Timestamp created) {
         this.created = created;
     }
 }
