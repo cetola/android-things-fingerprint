@@ -10,6 +10,15 @@ public interface UartManager {
     List<String> getDeviceList();
     int openUsbUart(String name);
     int queueCommand(Command cmd);
-    DeviceInfo getDeviceInfo();
-    Response getResponse();
+    void getDeviceInfo();
+    void setResponseListener(ResponseReadyListener listener);
+    void setDeviceInfoReadyListener(DeviceInfoReadyListener listener);
+
+    interface ResponseReadyListener {
+        void onResponseReady(Response response);
+    }
+
+    interface DeviceInfoReadyListener {
+        void onDeviceInfoReady(DeviceInfo info);
+    }
 }

@@ -73,6 +73,9 @@ public class Message {
 
     public int getParams() {
         int rtn = 0;
+        for(int i = PARAM_OFFSET; i < PARAM_OFFSET+4; i++) {
+            params[i-PARAM_OFFSET] = data.array()[i];
+        }
         rtn = (rtn << 8) + params[3];
         rtn = (rtn << 8) + params[2];
         rtn = (rtn << 8) + params[1];

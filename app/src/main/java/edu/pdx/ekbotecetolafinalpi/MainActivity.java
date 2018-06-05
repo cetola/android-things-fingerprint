@@ -10,6 +10,7 @@ import edu.pdx.ekbotecetolafinalpi.managers.EnrollmentManager;
 import edu.pdx.ekbotecetolafinalpi.managers.EnrollmentManagerImpl;
 import edu.pdx.ekbotecetolafinalpi.managers.UartManager;
 import edu.pdx.ekbotecetolafinalpi.managers.UartManagerImpl;
+import edu.pdx.ekbotecetolafinalpi.uart.Response;
 
 public class MainActivity extends Activity {
 
@@ -23,11 +24,20 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         uartManager = new UartManagerImpl();
+        uartManager.setDeviceInfoReadyListener(new UartManager.DeviceInfoReadyListener() {
+            @Override
+            public void onDeviceInfoReady(DeviceInfo info) {
+                setDeviceInfo(info);
+            }
+        });
         openUart();
         enrollmentManager = new EnrollmentManagerImpl(uartManager);
-        info = uartManager.getDeviceInfo();
-        int count = enrollmentManager.getEnrollmentCount();
-        Log.d(TAG, "onCreate: Total Enrolled: " + count);
+        uartManager.getDeviceInfo();
+    }
+
+    private void setDeviceInfo(DeviceInfo info) {
+        this.info = info;
+        enrollmentManager.startEnrollment();
     }
 
     private void openUart() {

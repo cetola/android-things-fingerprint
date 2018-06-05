@@ -7,6 +7,7 @@ import edu.pdx.ekbotecetolafinalpi.account.DeviceInfo;
 public class DataPacket extends Message {
     private static final String TAG = "DataPacket";
     public static final int MOD_INFO_SIZE = 30;
+    public static final int ENROLL_SIZE = 498;
     private int size;
     private DeviceInfo deviceInfo;
     private String commandId;

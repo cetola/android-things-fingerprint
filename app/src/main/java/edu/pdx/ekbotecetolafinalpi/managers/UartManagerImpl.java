@@ -34,9 +34,10 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
     private boolean waiting = false;
     private int waitCount = 0;
     private int oldDataSize;
-    private DeviceInfo info;
-    private Response response;
     CommandQueue q;
+    DeviceInfo info;
+    private ResponseReadyListener responseReadyListener;
+    private DeviceInfoReadyListener deviceInfoReadyListener;
 
     public UartManagerImpl() {
         super();
@@ -47,7 +48,7 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
             public void run() {
                 processQueue();
             }
-        }, 1000);
+        }, 0, 5000);
     }
 
     /**
@@ -140,16 +141,18 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
     private void processResponse() {
         Response rsp = new Response();
         rsp.addBytes(data.toByteArray());
-        checkResponse(rsp);
+        recievedResponse(rsp);
     }
 
     private void processDataPacket() {
         Response rsp = new Response();
         rsp.addRangeBytes(data.toByteArray(), 0, Message.MSG_SIZE - 1);
-        checkResponse(rsp);
+        recievedResponse(rsp);
         if(isDeviceInfo()) {
             setDeviceInfo();
-        } else {
+        } else if (isEnrollData()) {
+            Log.i(TAG, "processDataPacket: got enroll data");
+        }else {
             Log.e(TAG, "processDataPacket: Unknown Data Size: " + data.size() + ". Could not create DataPacket.");
         }
     }
@@ -158,35 +161,31 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
         return (data.size() - Message.MSG_SIZE) == DataPacket.MOD_INFO_SIZE;
     }
 
+    private boolean isEnrollData() {
+        return (data.size() - Message.MSG_SIZE) == DataPacket.ENROLL_SIZE;
+    }
+
     private void setDeviceInfo() {
         DataPacket dp;
         dp = new DataPacket(DataPacket.MOD_INFO_SIZE);
         dp.addRangeBytes(data.toByteArray(), Message.MSG_SIZE, (DataPacket.MOD_INFO_SIZE + Message.MSG_SIZE));
         info = dp.getDeviceInfo();
+        deviceInfoReadyListener.onDeviceInfoReady(info);
     }
 
-    public DeviceInfo getDeviceInfo() {
+    public void getDeviceInfo() {
         queueCommand(new Command(1, CommandList.Open));
-        UartUtils.holdOnASec(1);
-        return this.info;
     }
 
-    private void checkResponse(Response rsp) {
-        if(!rsp.isEmpty()) {
-            Log.i(TAG, "checkResponse: Got reponse: " + rsp.toString());
-            if(!rsp.getAck()) {
-                Log.e(TAG, "checkResponse: NACK!");
-                Log.d(TAG, "checkResponse: ERROR TEXT: " + rsp.getError());
-            } else {
-                Log.d(TAG, "checkResponse: ACK!");
-                Log.d(TAG, "checkResponse: params: " + rsp.getParams());
-            }
+    private void recievedResponse(Response rsp) {
+        if(!rsp.getAck()) {
+            Log.e(TAG, "recievedResponse: NACK!");
+            Log.d(TAG, "recievedResponse: ERROR TEXT: " + rsp.getError());
+        } else {
+            Log.d(TAG, "recievedResponse: ACK!");
+            Log.d(TAG, "recievedResponse: params: " + rsp.getParams());
         }
-        response = rsp;
-    }
-
-    public Response getResponse() {
-        return this.response;
+        responseReadyListener.onResponseReady(rsp);
     }
 
     @Override
@@ -222,8 +221,11 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
     }
 
     private void processQueue() {
+        Log.d(TAG, "processQueue: PROCESS!");
         if(q.getSize() > 0 && !waiting) {
             sendCommand(q.getNextCommand());
+        } else {
+            Log.d(TAG, "processQueue: wait: " + waiting + " queue size " + q.getSize());
         }
     }
 
@@ -253,5 +255,13 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
         uartDevice.setStopBits(stopBits);
         uartDevice.setHardwareFlowControl(UartDevice.HW_FLOW_CONTROL_NONE);
         uartDevice.registerUartDeviceCallback(getInputHandler(), callback);
+    }
+
+    public void setResponseListener(ResponseReadyListener rspListener) {
+        this.responseReadyListener = rspListener;
+    }
+
+    public void setDeviceInfoReadyListener(DeviceInfoReadyListener deviceInfoListener) {
+        this.deviceInfoReadyListener = deviceInfoListener;
     }
 }
