@@ -14,7 +14,7 @@ import java.util.TimerTask;
 
 import edu.pdx.ekbotecetolafinalpi.account.DeviceInfo;
 import edu.pdx.ekbotecetolafinalpi.uart.Command;
-import edu.pdx.ekbotecetolafinalpi.uart.CommandList;
+import edu.pdx.ekbotecetolafinalpi.uart.CommandMap;
 import edu.pdx.ekbotecetolafinalpi.uart.CommandQueue;
 import edu.pdx.ekbotecetolafinalpi.uart.DataPacket;
 import edu.pdx.ekbotecetolafinalpi.uart.Message;
@@ -174,7 +174,7 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
     }
 
     public void getDeviceInfo() {
-        queueCommand(new Command(1, CommandList.Open));
+        queueCommand(new Command(1, CommandMap.Open));
     }
 
     private void recievedResponse(Response rsp) {

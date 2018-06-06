@@ -1,35 +1,31 @@
 {
   "project_info": {
-    "project_number": "919320513634",
-    "firebase_url": "https://ekbote-cetola-inal.firebaseio.com",
-    "project_id": "ekbote-cetola-inal",
-    "storage_bucket": "ekbote-cetola-inal.appspot.com"
+    "project_number": "585258762488",
+    "firebase_url": "https://esp-finalproject-lockbox.firebaseio.com",
+    "project_id": "esp-finalproject-lockbox",
+    "storage_bucket": "esp-finalproject-lockbox.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:919320513634:android:4b4e925f7e99d4dc",
+        "mobilesdk_app_id": "1:585258762488:android:4b4e925f7e99d4dc",
         "android_client_info": {
           "package_name": "edu.pdx.ekbotecetolafinalpi"
         }
       },
       "oauth_client": [
         {
-          "client_id": "919320513634-7a435t268jpe6a1qqnln427u0md4of0u.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "edu.pdx.ekbotecetolafinalpi",
-            "certificate_hash": "235159f339b91805f6f5bd30b736c597d27610d9"
-          }
+          "client_id": "585258762488-gr24jjeb8ivmf1u3l5hn35i955bb9g5r.apps.googleusercontent.com",
+          "client_type": 3
         },
         {
-          "client_id": "919320513634-e058vd60ujlb0iflh7dsreqcd2ukgfci.apps.googleusercontent.com",
+          "client_id": "585258762488-gr24jjeb8ivmf1u3l5hn35i955bb9g5r.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyALnkJS4q6Ltppa29qy15ThAarli66E4j0"
+          "current_key": "AIzaSyApQ7oRiT6Fs5_OAtHXSL6pO6iMsOJVU3k"
         }
       ],
       "services": {
@@ -37,13 +33,8 @@
           "status": 1
         },
         "appinvite_service": {
-          "status": 2,
-          "other_platform_oauth_client": [
-            {
-              "client_id": "919320513634-e058vd60ujlb0iflh7dsreqcd2ukgfci.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "status": 1,
+          "other_platform_oauth_client": []
         },
         "ads_service": {
           "status": 2

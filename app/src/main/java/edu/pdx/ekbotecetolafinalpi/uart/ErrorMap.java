@@ -3,7 +3,7 @@ package edu.pdx.ekbotecetolafinalpi.uart;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Errors {
+public class ErrorMap {
     public static final Character NO_ERROR                     = 0x0000;  // Default value. no error
     public static final Character NACK_TIMEOUT                 = 0x1001;  // Obsolete, capture timeout
     public static final Character NACK_INVALID_BAUDRATE        = 0x1002;  // Obsolete, Invalid serial baud rate

@@ -44,6 +44,6 @@ public class Command extends Message {
     }
 
     public String getName() {
-        return CommandList.commandList.get(cmd);
+        return CommandMap.commandList.get(cmd);
     }
 }

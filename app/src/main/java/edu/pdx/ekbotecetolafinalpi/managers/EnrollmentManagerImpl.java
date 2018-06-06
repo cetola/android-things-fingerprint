@@ -4,7 +4,7 @@ import android.util.Log;
 
 import edu.pdx.ekbotecetolafinalpi.account.Enrollment;
 import edu.pdx.ekbotecetolafinalpi.uart.Command;
-import edu.pdx.ekbotecetolafinalpi.uart.CommandList;
+import edu.pdx.ekbotecetolafinalpi.uart.CommandMap;
 import edu.pdx.ekbotecetolafinalpi.uart.Response;
 
 public class EnrollmentManagerImpl implements EnrollmentManager {
@@ -19,7 +19,7 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
         enrollState = Enrollment.NOT_ENROLLING;
         attempts = 0;
         this.uartManager = uartManager;
-        uartManager.setResponseListener(new UartManager.ResponseReadyListener() {
+        this.uartManager.setResponseListener(new UartManager.ResponseReadyListener() {
             @Override
             public void onResponseReady(Response rsp) {
                 if(!rsp.isEmpty()) {
@@ -80,29 +80,29 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
                 } else {
                     enrollState = nextState;
                     nextState = nextEnroll();
-                    sendCommand(new Command(0, CommandList.EnrollStart));
+                    sendCommand(new Command(0, CommandMap.EnrollStart));
                 }
                 break;
             case Enrollment.ENROLL_START:
                 enrollState = nextState;
                 nextState = nextEnroll();
-                sendCommand(new Command(0, CommandList.Enroll1));
+                sendCommand(new Command(0, CommandMap.Enroll1));
                 break;
             case Enrollment.ENROLL_1:
                 enrollState = nextState;
                 nextState = nextEnroll();
-                sendCommand(new Command(0, CommandList.Enroll2));
+                sendCommand(new Command(0, CommandMap.Enroll2));
                 break;
             case Enrollment.ENROLL_2:
                 enrollState = nextState;
                 nextState = nextEnroll();
-                sendCommand(new Command(0, CommandList.Enroll3));
+                sendCommand(new Command(0, CommandMap.Enroll3));
                 break;
             case Enrollment.ENROLL_3:
                 Log.i(TAG, "step: DONE!");
                 enrollState = Enrollment.NOT_ENROLLING;
                 nextState = Enrollment.NOT_ENROLLING;
-                uartManager.queueCommand(new Command(0, CommandList.CmosLed));
+                uartManager.queueCommand(new Command(0, CommandMap.CmosLed));
                 break;
         }
     }
@@ -119,7 +119,7 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
     private void getFingerPress() {
         attempts++;
         if(attempts < 4) {
-            sendCommand(new Command(0, CommandList.IsPressFinger));
+            sendCommand(new Command(0, CommandMap.IsPressFinger));
         } else {
             enrollFail();
             attempts = 0;
@@ -137,7 +137,7 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
     private void enrollFail() {
         Log.e(TAG, "enrollFail: state: " + enrollState);
         enrollState = Enrollment.NOT_ENROLLING;
-        uartManager.queueCommand(new Command(0, CommandList.CmosLed));
+        uartManager.queueCommand(new Command(0, CommandMap.CmosLed));
     }
 
     private void sendCommand(Command cmd) {
@@ -145,14 +145,14 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
     }
 
     public void getEnrollmentCount() {
-        uartManager.queueCommand(new Command(0, CommandList.GetEnrollCount));
+        uartManager.queueCommand(new Command(0, CommandMap.GetEnrollCount));
     }
 
     public void startEnrollment() {
         enrollState = Enrollment.LED_ON;
         nextState = Enrollment.FINGER_PRESS;
         enrollNumber = Enrollment.ENROLL_START;
-        uartManager.queueCommand(new Command(1, CommandList.CmosLed));
+        uartManager.queueCommand(new Command(1, CommandMap.CmosLed));
     }
 
     private void showCount(Response rsp) {

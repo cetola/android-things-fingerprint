@@ -23,7 +23,7 @@ public class Response extends Message {
     }
 
     public String getError() {
-        error = Errors.erorrList.get(getData().getChar(ERR_INDEX));
+        error = ErrorMap.erorrList.get(getData().getChar(ERR_INDEX));
         return error;
     }
 
