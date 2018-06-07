@@ -18,7 +18,7 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
     private int nextState;
     private int attempts;
     private int enrollNumber;
-    private int enrollId = 4;
+    private int enrollId = 3;
     private Enrollment currentEnrollment;
 
     public EnrollmentManagerImpl(UartManager uartManager, DeviceDao dd) {
@@ -104,22 +104,27 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
                 } else {
                     enrollState = nextState;
                     nextState = enrollNumber;
-                    deviceDao.sendMessage("Capturing finger image.");
+                    deviceDao.sendMessage("Capturing finger image...");
                     sendCommand(new Command(0, CommandMap.CaptureFinger));
                 }
                 break;
             case EnrollmentStep.ENROLL_START:
+                attempts = 0;
+                deviceDao.sendMessage("Please press finger (1st template)");
                 getNextTemplate();
                 break;
             case EnrollmentStep.ENROLL_1:
+                attempts = 0;
                 deviceDao.sendMessage("Please press finger (2nd template)");
                 getNextTemplate();
                 break;
             case EnrollmentStep.ENROLL_2:
+                attempts = 0;
                 deviceDao.sendMessage("Please press finger (3rd template)");
                 getNextTemplate();
                 break;
             case EnrollmentStep.ENROLL_3:
+                attempts = 0;
                 deviceDao.sendMessage("Enrolled ID " + enrollId + " successfully.");
                 saveEnrollment();
                 break;
@@ -141,7 +146,7 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
     private void getNextTemplate() {
         enrollState = nextState;
         nextState = EnrollmentStep.CAPTURE_FINGER;
-        deviceDao.sendMessage("Check for finger press.");
+        deviceDao.sendMessage("Checking for finger...");
         sendCommand(new Command(0, CommandMap.IsPressFinger));
     }
 
@@ -152,15 +157,15 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
                 sendCommand(new Command(enrollId, CommandMap.EnrollStart));
                 break;
             case EnrollmentStep.ENROLL_1:
-                deviceDao.sendMessage("Enroll 1.");
+                deviceDao.sendMessage("Enroll 1. Please remove your finger.");
                 sendCommand(new Command(enrollId, CommandMap.Enroll1));
                 break;
             case EnrollmentStep.ENROLL_2:
-                deviceDao.sendMessage("Enroll 2");
+                deviceDao.sendMessage("Enroll 2. Please remove your finger.");
                 sendCommand(new Command(enrollId, CommandMap.Enroll2));
                 break;
             case EnrollmentStep.ENROLL_3:
-                deviceDao.sendMessage("Enroll 3");
+                deviceDao.sendMessage("Enroll 3. Please remove your finger.");
                 sendCommand(new Command(enrollId, CommandMap.Enroll3));
                 break;
         }
