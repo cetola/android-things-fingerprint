@@ -1,11 +1,15 @@
 package edu.pdx.ekbotecetolafinalpi.uart;
 
+import com.google.firebase.firestore.DocumentReference;
+
 public class Response extends Message {
     private static final String TAG = "Response";
+    public static final String COLLECTION = "responses";
     private static final char ACK = 0x30;
     private static final int ACK_INDEX = 8;
     private static final int ERR_INDEX = 4;
-    private String commandId;
+    private DocumentReference cmdRef;
+    private Command command;
 
     private String error = "";
     private boolean ack = false;
@@ -36,11 +40,26 @@ public class Response extends Message {
         return true;
     }
 
-    public String getCommandId() {
-        return commandId;
+    public void setCommand(Command command, DocumentReference cmdRef) {
+        this.command = command;
+        this.cmdRef = cmdRef;
     }
 
-    public void setCommandId(String commandId) {
-        this.commandId = commandId;
+    /**
+     * This is simply for debugging purposes.
+     *
+     * This will store a String "command name" in the Firestore. While this is redundant data, it
+     * makes debugging much easier as a quick glance at the Firestore tells you what type of command
+     * the response belongs to.
+     * @return
+     */
+    @SuppressWarnings("unused")
+    public String getCommandName() {
+        return this.command.getName();
+    }
+
+    @SuppressWarnings("unused")
+    public DocumentReference getCmdRef() {
+        return cmdRef;
     }
 }

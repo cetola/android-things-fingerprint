@@ -19,7 +19,6 @@ import edu.pdx.ekbotecetolafinalpi.uart.CommandQueue;
 import edu.pdx.ekbotecetolafinalpi.uart.DataPacket;
 import edu.pdx.ekbotecetolafinalpi.uart.Message;
 import edu.pdx.ekbotecetolafinalpi.uart.Response;
-import edu.pdx.ekbotecetolafinalpi.uart.UartUtils;
 
 public class UartManagerImpl extends ThreadedManager implements UartManager {
     private static final String TAG = "UartManagerImpl";
@@ -81,7 +80,6 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
                 byte[] buffer = new byte[CHUNK_SIZE];
                 int read;
                 while ((read = uartDevice.read(buffer, buffer.length)) > 0) {
-                    //Log.i(TAG, "readData: " + UartUtils.bytesToHex(buffer, read) + " size " + read);
                     data.write(buffer, 0, read);
                 }
             } catch (IOException e) {
@@ -98,7 +96,6 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
     private void waitForData() {
         waitCount++;
         if(!waiting) {
-            Log.d(TAG, "waitForData: WAIT");
             oldDataSize = data.size();
             waiting = true;
             new Timer().schedule(new TimerTask() {
@@ -107,12 +104,11 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
                 }
             }, 500);
         } else {
-            Log.d(TAG, "waitForData: Already waiting: " + waitCount);
+            //Log.d(TAG, "waitForData: Already waiting: " + waitCount);
         }
     }
 
     private void checkDataSize() {
-        Log.d(TAG, "checkDataSize: CHECK");
         if(data.size() > oldDataSize) {
             waiting = false;
             waitCount = 0;
@@ -126,8 +122,6 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
     }
 
     private void process() {
-        Log.d(TAG, "process: data size: " + data.size());
-        Log.d(TAG, "process: data: " + UartUtils.bytesToHex(data.toByteArray(), data.size()));
         if(data.size() == Message.MSG_SIZE) {
             processResponse();
         } else if(data.size() > Message.MSG_SIZE) {
@@ -178,13 +172,7 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
     }
 
     private void recievedResponse(Response rsp) {
-        if(!rsp.getAck()) {
-            Log.e(TAG, "recievedResponse: NACK!");
-            Log.d(TAG, "recievedResponse: ERROR TEXT: " + rsp.getError());
-        } else {
-            Log.d(TAG, "recievedResponse: ACK!");
-            Log.d(TAG, "recievedResponse: params: " + rsp.getParams());
-        }
+        q.addResponse(rsp);
         responseReadyListener.onResponseReady(rsp);
     }
 
@@ -221,16 +209,14 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
     }
 
     private void processQueue() {
-        Log.d(TAG, "processQueue: PROCESS!");
         if(q.getSize() > 0 && !waiting) {
             sendCommand(q.getNextCommand());
         } else {
-            Log.d(TAG, "processQueue: wait: " + waiting + " queue size " + q.getSize());
+            //Log.d(TAG, "processQueue: wait: " + waiting + " queue size " + q.getSize());
         }
     }
 
     private int sendCommand(Command cmd) {
-        Log.i(TAG, "sendCommand: sending data: " + UartUtils.bytesToHex(cmd.getData().array(), cmd.getData().array().length));
         try {
             uartDevice.write(cmd.getData().array(), cmd.getData().array().length);
         } catch (IOException e) {

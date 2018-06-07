@@ -10,7 +10,6 @@ public class Command extends Message {
     public static final String COLLECTION = "commands";
     private static final int CMD_OFFSET = 8;
     private static final int CHKSUM_OFFSET = 10;
-    private String name;
 
     private char cmd;
     private char checksum;
@@ -22,7 +21,6 @@ public class Command extends Message {
         setCmd(cmd);
         setChecksum();
         updateStringData();
-        setCreated(new Timestamp(new Date()));
     }
 
     private void setup() {

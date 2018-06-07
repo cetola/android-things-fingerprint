@@ -9,6 +9,7 @@ import com.google.firebase.firestore.IgnoreExtraProperties;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Date;
 
 @IgnoreExtraProperties
 public class Message {
@@ -28,6 +29,7 @@ public class Message {
         params = new byte[4];
         data = ByteBuffer.allocate(MSG_SIZE);
         this.data.order(ByteOrder.LITTLE_ENDIAN);
+        setCreated(new Timestamp(new Date()));
     }
 
     public Message(int size) {

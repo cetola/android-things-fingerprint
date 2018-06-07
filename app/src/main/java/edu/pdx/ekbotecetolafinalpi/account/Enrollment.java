@@ -10,5 +10,6 @@ public class Enrollment {
     public static final int FINGER_PRESS = 6;
     public static final int LED_ON = 7;
     public static final int LED_OFF = 7;
+    public static final int CAPTURE_FINGER = 8;
     public static final int NOT_ENROLLING = -1;
 }

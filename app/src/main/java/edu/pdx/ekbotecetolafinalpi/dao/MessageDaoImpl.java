@@ -27,15 +27,10 @@ public class MessageDaoImpl implements MessageDao {
     }
 
     @Override
-    public void saveCommand(final Command cmd) {
+    public void saveCommand(final Command cmd, OnSuccessListener<DocumentReference> result) {
         db.collection(Command.COLLECTION)
                 .add(cmd)
-                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                    @Override
-                    public void onSuccess(DocumentReference documentReference) {
-                        Log.d(TAG, "DocumentSnapshot added with ID: " + documentReference.getId());
-                    }
-                })
+                .addOnSuccessListener(result)
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
@@ -54,7 +49,6 @@ public class MessageDaoImpl implements MessageDao {
                     DocumentSnapshot document = task.getResult();
                     if (document.exists()) {
                         Command cmd = document.toObject(Command.class);
-                        Log.d(TAG, "DocumentSnapshot data: " + document.getData());
                     } else {
                         Log.d(TAG, "No such document");
                     }
@@ -67,17 +61,25 @@ public class MessageDaoImpl implements MessageDao {
     }
 
     @Override
-    public void setCommandComplete(Command cmd) {
-        //stub
-    }
-
-    @Override
-    public void saveResponse(Response rsp) {
-        //stub
+    public void saveResponse(Response rsp, OnSuccessListener<DocumentReference> result) {
+        db.collection(Response.COLLECTION)
+                .add(rsp)
+                .addOnSuccessListener(result)
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w(TAG, "Error adding document", e);
+                    }
+                });
     }
 
     @Override
     public void saveDataPacket(DataPacket dp) {
         //stub
+    }
+
+    @Override
+    public DocumentReference getCommandRef(String id) {
+        return dbManager.getDatabase().collection(Command.COLLECTION).document(id);
     }
 }
