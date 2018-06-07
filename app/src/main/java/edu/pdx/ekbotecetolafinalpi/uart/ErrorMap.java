@@ -17,7 +17,7 @@ public class ErrorMap {
     public static final Character NACK_DB_IS_EMPTY             = 0x100A;  // The database is empty
     public static final Character NACK_TURN_ERR                = 0x100B;  // Obsolete, Invalid order of the enrollment (The order was not as= EnrollStart -> Enroll1 -> Enroll2 -> Enroll3)
     public static final Character NACK_BAD_FINGER              = 0x100C;  // Too bad fingerprint
-    public static final Character NACK_ENROLL_FAILED           = 0x100D;  // Enrollment Failure
+    public static final Character NACK_ENROLL_FAILED           = 0x100D;  // EnrollmentStep Failure
     public static final Character NACK_IS_NOT_SUPPORTED        = 0x100E;  // The specified command is not supported
     public static final Character NACK_DEV_ERR                 = 0x100F;  // Device Error, especially if Crypto-Chip is trouble
     public static final Character NACK_CAPTURE_CANCELED        = 0x1010;  // Obsolete, The capturing is canceled
@@ -42,7 +42,7 @@ public class ErrorMap {
         myMap.put(NACK_DB_IS_EMPTY, "The database is empty");
         myMap.put(NACK_TURN_ERR, "Obsolete, Invalid order of the enrollment");
         myMap.put(NACK_BAD_FINGER, "Bad fingerprint");
-        myMap.put(NACK_ENROLL_FAILED, "Enrollment Failure");
+        myMap.put(NACK_ENROLL_FAILED, "EnrollmentStep Failure");
         myMap.put(NACK_IS_NOT_SUPPORTED, "The specified command is not supported");
         myMap.put(NACK_DEV_ERR, "Device Error, especially if Crypto-Chip is trouble");
         myMap.put(NACK_CAPTURE_CANCELED, "Obsolete, capturing is canceled");

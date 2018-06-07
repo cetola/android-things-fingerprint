@@ -40,7 +40,7 @@ public class MainActivity extends Activity {
 
     private void setDeviceInfo(DeviceInfo info) {
         this.info = info;
-        enrollmentManager.startEnrollment();
+        enrollmentManager.begin();
     }
 
     private void openUart() {
