@@ -1,4 +1,4 @@
-package edu.pdx.ekbotecetolafinalpi.account;
+package edu.pdx.ekbotecetolafinalpi.states;
 
 public class EnrollmentState extends State {
     public static final int ENROLL_START = 0;

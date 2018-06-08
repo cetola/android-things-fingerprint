@@ -7,7 +7,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 
 import edu.pdx.ekbotecetolafinalpi.account.Enrollment;
-import edu.pdx.ekbotecetolafinalpi.account.EnrollmentState;
+import edu.pdx.ekbotecetolafinalpi.states.EnrollmentState;
 import edu.pdx.ekbotecetolafinalpi.account.User;
 import edu.pdx.ekbotecetolafinalpi.dao.DeviceDao;
 import edu.pdx.ekbotecetolafinalpi.dao.DeviceDaoImpl;
