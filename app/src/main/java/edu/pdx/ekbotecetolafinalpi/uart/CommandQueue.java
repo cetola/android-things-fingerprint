@@ -24,8 +24,8 @@ public class CommandQueue {
     MessageDao msgDao;
     FirestoreManager dbManager;
 
-    public CommandQueue() {
-        dbManager = new FirestoreManagerImpl();
+    public CommandQueue(FirestoreManager dbManager) {
+        this.dbManager = dbManager;
         msgDao = new MessageDaoImpl(dbManager);
         commands = new ArrayDeque<>();
         handshake = new HashMap<>();

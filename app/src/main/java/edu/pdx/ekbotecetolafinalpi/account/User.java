@@ -1,12 +1,22 @@
 package edu.pdx.ekbotecetolafinalpi.account;
 
-import java.time.LocalDateTime;
+import com.google.firebase.Timestamp;
 
 public class User {
+    private String id;
     private String firstName;
     private String lastName;
     private String username;
-    private LocalDateTime created;
+    private Timestamp created;
+    public static final String COLLECTION = "users";
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getFirstName() {
         return firstName;
@@ -32,11 +42,11 @@ public class User {
         this.username = username;
     }
 
-    public LocalDateTime getCreated() {
+    public Timestamp getCreated() {
         return created;
     }
 
-    public void setCreated(LocalDateTime created) {
+    public void setCreated(Timestamp created) {
         this.created = created;
     }
 }

@@ -1,15 +1,26 @@
 package edu.pdx.ekbotecetolafinalpi.account;
 
+import com.google.firebase.firestore.DocumentReference;
+
 public class Enrollment {
-    private int id;
+    private String id;
+    private int scannerId;
     private int finger;
     private User user;
+    private DocumentReference userRef;
+    public static final String COLLECTION = "enrollments";
 
-    public int getId() {
+    public Enrollment(int scannerId, int finger, User user, DocumentReference userRef) {
+        setScannerId(scannerId);
+        setFinger(finger);
+        setUser(user, userRef);
+    }
+
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -25,7 +36,20 @@ public class Enrollment {
         return user;
     }
 
-    public void setUser(User user) {
+    public void setUser(User user, DocumentReference userRef) {
         this.user = user;
+        this.userRef = userRef;
+    }
+
+    public int getScannerId() {
+        return scannerId;
+    }
+
+    public void setScannerId(int scannerId) {
+        this.scannerId = scannerId;
+    }
+
+    public DocumentReference getUserRef() {
+        return userRef;
     }
 }

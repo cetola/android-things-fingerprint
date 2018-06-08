@@ -1,5 +1,5 @@
 package edu.pdx.ekbotecetolafinalpi.managers;
 
 public interface EnrollmentManager {
-    void begin();
+    void checkEnroll(int scannerId, int finger, String userId);
 }

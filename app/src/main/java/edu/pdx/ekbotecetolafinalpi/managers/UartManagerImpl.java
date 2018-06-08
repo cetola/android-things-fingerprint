@@ -38,10 +38,9 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
     private ResponseReadyListener responseReadyListener;
     private DeviceInfoReadyListener deviceInfoReadyListener;
 
-    public UartManagerImpl() {
-        super();
+    public UartManagerImpl(FirestoreManager dbManager) {
         pm = PeripheralManager.getInstance();
-        q = new CommandQueue();
+        q = new CommandQueue(dbManager);
 
         new Timer().schedule(new TimerTask() {
             public void run() {
@@ -194,6 +193,7 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
         createLooperThread();
         try {
             openUart(name);
+            // Read any initially buffered data
             getInputHandler().post(uartRunnable);
         } catch (IOException e) {
             Log.e(TAG, "Unable to open UART device", e);

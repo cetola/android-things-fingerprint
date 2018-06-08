@@ -2,10 +2,19 @@ package edu.pdx.ekbotecetolafinalpi.managers;
 
 import android.util.Log;
 
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+
 import edu.pdx.ekbotecetolafinalpi.account.Enrollment;
 import edu.pdx.ekbotecetolafinalpi.account.EnrollmentStep;
 import edu.pdx.ekbotecetolafinalpi.account.User;
 import edu.pdx.ekbotecetolafinalpi.dao.DeviceDao;
+import edu.pdx.ekbotecetolafinalpi.dao.DeviceDaoImpl;
+import edu.pdx.ekbotecetolafinalpi.dao.EnrollmentDao;
+import edu.pdx.ekbotecetolafinalpi.dao.EnrollmentDaoImpl;
+import edu.pdx.ekbotecetolafinalpi.dao.UserDao;
+import edu.pdx.ekbotecetolafinalpi.dao.UserDaoImpl;
 import edu.pdx.ekbotecetolafinalpi.uart.Command;
 import edu.pdx.ekbotecetolafinalpi.uart.CommandMap;
 import edu.pdx.ekbotecetolafinalpi.uart.Response;
@@ -18,12 +27,18 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
     private int nextState;
     private int attempts;
     private int enrollNumber;
-    private int enrollId = 3;
+    private int currentFingerId;
+    private int currentScannerId;
     private Enrollment currentEnrollment;
+    private User currentUser;
+    private EnrollmentDao enrollmentDao;
+    private UserDao userDao;
 
-    public EnrollmentManagerImpl(UartManager uartManager, DeviceDao dd) {
+    public EnrollmentManagerImpl(UartManager uartManager, FirestoreManager dbManager) {
         enrollState = EnrollmentStep.NOT_ENROLLING;
-        deviceDao = dd;
+        deviceDao = new DeviceDaoImpl();
+        userDao = new UserDaoImpl(dbManager);
+        enrollmentDao = new EnrollmentDaoImpl(dbManager);
         attempts = 0;
         this.uartManager = uartManager;
         this.uartManager.setResponseListener(new UartManager.ResponseReadyListener() {
@@ -38,20 +53,6 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
                 }
             }
         });
-    }
-
-    public void begin() {
-        getEnrollCount();
-    }
-
-    private void getEnrollCount() {
-        this.enrollState = EnrollmentStep.ENROLL_COUNT;
-        uartManager.queueCommand(new Command(0, CommandMap.GetEnrollCount));
-    }
-
-    private void getEnrollStatus() {
-        this.enrollState = EnrollmentStep.CHECK_ENROLLED;
-        uartManager.queueCommand(new Command(enrollId, CommandMap.CheckEnrolled));
     }
 
     private void doAck(Response rsp) {
@@ -91,6 +92,16 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
         }
     }
 
+    private void getEnrollCount() {
+        this.enrollState = EnrollmentStep.ENROLL_COUNT;
+        uartManager.queueCommand(new Command(0, CommandMap.GetEnrollCount));
+    }
+
+    private void getEnrollStatus() {
+        this.enrollState = EnrollmentStep.CHECK_ENROLLED;
+        uartManager.queueCommand(new Command(currentScannerId, CommandMap.CheckEnrolled));
+    }
+
     private void step(Response rsp) {
         switch (enrollState) {
             case EnrollmentStep.LED_ON:
@@ -125,7 +136,7 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
                 break;
             case EnrollmentStep.ENROLL_3:
                 attempts = 0;
-                deviceDao.sendMessage("Enrolled ID " + enrollId + " successfully.");
+                deviceDao.sendMessage("Enrolled ID " + currentScannerId + " successfully.");
                 saveEnrollment();
                 break;
             case EnrollmentStep.CAPTURE_FINGER:
@@ -137,10 +148,15 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
     }
 
     private void saveEnrollment() {
-        //TODO: save enrollment object
         enrollState = EnrollmentStep.NOT_ENROLLING;
         nextState = EnrollmentStep.NOT_ENROLLING;
         uartManager.queueCommand(new Command(0, CommandMap.CmosLed));
+        enrollmentDao.saveEnrollment(currentEnrollment, new OnSuccessListener<DocumentReference>() {
+            @Override
+            public void onSuccess(DocumentReference documentReference) {
+                Log.d(TAG, "onSuccess: Saved Enrollment: " + documentReference.getId());
+            }
+        });
     }
 
     private void getNextTemplate() {
@@ -154,19 +170,19 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
         switch (enrollNumber) {
             case EnrollmentStep.ENROLL_START:
                 deviceDao.sendMessage("EnrollmentStep start.");
-                sendCommand(new Command(enrollId, CommandMap.EnrollStart));
+                sendCommand(new Command(currentScannerId, CommandMap.EnrollStart));
                 break;
             case EnrollmentStep.ENROLL_1:
                 deviceDao.sendMessage("Enroll 1. Please remove your finger.");
-                sendCommand(new Command(enrollId, CommandMap.Enroll1));
+                sendCommand(new Command(currentScannerId, CommandMap.Enroll1));
                 break;
             case EnrollmentStep.ENROLL_2:
                 deviceDao.sendMessage("Enroll 2. Please remove your finger.");
-                sendCommand(new Command(enrollId, CommandMap.Enroll2));
+                sendCommand(new Command(currentScannerId, CommandMap.Enroll2));
                 break;
             case EnrollmentStep.ENROLL_3:
                 deviceDao.sendMessage("Enroll 3. Please remove your finger.");
-                sendCommand(new Command(enrollId, CommandMap.Enroll3));
+                sendCommand(new Command(currentScannerId, CommandMap.Enroll3));
                 break;
         }
         enrollNumber = nextEnroll();
@@ -208,14 +224,29 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
         uartManager.queueCommand(cmd);
     }
 
-    public void getEnrollmentCount() {
+    private void getEnrollmentCount() {
         uartManager.queueCommand(new Command(0, CommandMap.GetEnrollCount));
     }
 
-    public void startEnrollment(int id, User user) {
-        this.currentEnrollment = new Enrollment();
-        currentEnrollment.setId(id);
-        currentEnrollment.setUser(user);
+    private void showCount(Response rsp) {
+        deviceDao.sendMessage("Got count: " + rsp.getParams());
+        getEnrollStatus();
+    }
+
+    private void showEnrollStatus(Response rsp) {
+        if(!rsp.getAck()) {
+            deviceDao.sendMessage("Scanner ID not enrolled, enrolling...");
+            startEnrollment();
+        } else {
+            deviceDao.sendMessage("ID " + currentScannerId + " already enrolled.");
+            enrollState = EnrollmentStep.NOT_ENROLLING;
+            uartManager.queueCommand(new Command(0, CommandMap.CmosLed));
+        }
+    }
+
+    private void startEnrollment() {
+        currentEnrollment = new Enrollment(currentScannerId, currentFingerId, currentUser,
+                userDao.getUserRef(currentUser.getId()));
         deviceDao.sendMessage("Starting enrollment, LED ON");
         enrollState = EnrollmentStep.LED_ON;
         nextState = EnrollmentStep.ENROLL_START;
@@ -223,24 +254,28 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
         uartManager.queueCommand(new Command(1, CommandMap.CmosLed));
     }
 
-    private void showCount(Response rsp) {
-        deviceDao.sendMessage("Got count: " + rsp.getParams());
-        this.enrollState = EnrollmentStep.NOT_ENROLLING;
-        getEnrollStatus();
+    @Override
+    public void checkEnroll(int scannerId, int finger, final String userId) {
+        Log.d(TAG, "checkEnroll: userId: " + userId);
+        currentFingerId = finger;
+        currentScannerId = scannerId;
+        //TODO: lock
+        userDao.getUserById(userId, new OnSuccessListener<DocumentSnapshot>() {
+            @Override
+            public void onSuccess(DocumentSnapshot documentSnapshot) {
+                if(documentSnapshot.exists()) {
+                    //TODO: not sure why the ID doesn't get returned on the doc snapshot
+                    User u = documentSnapshot.toObject(User.class);
+                    u.setId(userId);
+                    enrollUser(u);
+                }
+            }
+        });
     }
 
-    private void showEnrollStatus(Response rsp) {
-        deviceDao.sendMessage("Got enroll status ack: " + rsp.getAck());
-        deviceDao.sendMessage("Got enroll status params: " + rsp.getParams());
-        this.enrollState = EnrollmentStep.NOT_ENROLLING;
-        if(!rsp.getAck()) {
-            deviceDao.sendMessage("Error code: " + rsp.getError());
-            deviceDao.sendMessage("Not enrolled, enrolling...");
-            //TODO: get user
-            User user = new User();
-            startEnrollment(enrollId, user);
-        } else {
-            deviceDao.sendMessage("ID " + enrollId + " already enrolled.");
-        }
+    private void enrollUser(User user) {
+        Log.d(TAG, "enrollUser: " + user.getUsername());
+        currentUser = user;
+        getEnrollStatus();
     }
 }
