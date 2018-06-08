@@ -1,6 +1,6 @@
 package edu.pdx.ekbotecetolafinalpi.account;
 
-public class EnrollmentStep {
+public class EnrollmentState extends State {
     public static final int ENROLL_START = 0;
     public static final int ENROLL_1 = 1;
     public static final int ENROLL_2 = 2;
