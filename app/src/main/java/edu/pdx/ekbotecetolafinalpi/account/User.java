@@ -3,6 +3,8 @@ package edu.pdx.ekbotecetolafinalpi.account;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Exclude;
 
+import java.util.Date;
+
 public class User {
     private String id;
     private String firstName;
@@ -10,6 +12,16 @@ public class User {
     private String username;
     private Timestamp created;
     public static final String COLLECTION = "users";
+
+    public User() {
+    }
+
+    public User(String firstName, String lastName, String username) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.username = username;
+        setCreated(new Timestamp(new Date()));
+    }
 
     @Exclude
     public String getId() {

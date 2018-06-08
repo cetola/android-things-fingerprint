@@ -39,4 +39,17 @@ public class UserDaoImpl implements UserDao {
                     }
                 });
     }
+
+    @Override
+    public void saveUser(final User user, OnSuccessListener<DocumentReference> result) {
+        db.collection(User.COLLECTION)
+                .add(user)
+                .addOnSuccessListener(result)
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w(TAG, "Error adding user", e);
+                    }
+                });
+    }
 }
