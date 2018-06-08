@@ -41,6 +41,8 @@ public class MainActivity extends Activity {
     private void setDeviceInfo(DeviceInfo info) {
         this.info = info;
         enrollmentManager.checkEnroll(0, 0, "foo");
+        //DANGER ZONE
+        //enrollmentManager.deleteAll();
     }
 
     private void openUart() {

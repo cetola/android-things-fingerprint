@@ -12,5 +12,6 @@ public class EnrollmentStep {
     public static final int LED_OFF = 7;
     public static final int CAPTURE_FINGER = 8;
     public static final int CHECK_ENROLLED = 9;
+    public static final int DELETE_ALL = 666;
     public static final int NOT_ENROLLING = -1;
 }

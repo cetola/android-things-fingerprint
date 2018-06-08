@@ -1,6 +1,7 @@
 package edu.pdx.ekbotecetolafinalpi.account;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.Exclude;
 
 public class User {
     private String id;
@@ -10,6 +11,7 @@ public class User {
     private Timestamp created;
     public static final String COLLECTION = "users";
 
+    @Exclude
     public String getId() {
         return id;
     }

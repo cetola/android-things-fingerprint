@@ -69,6 +69,10 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
             case EnrollmentStep.ENROLL_FAIL:
                 error();
                 break;
+            case EnrollmentStep.DELETE_ALL:
+                Log.d(TAG, "=========================DELETE ALL SUCCESS. Hope you meant it.");
+                enrollState = EnrollmentStep.NOT_ENROLLING;
+                break;
             default:
                 step(rsp);
                 break;
@@ -84,9 +88,14 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
                 deviceDao.sendMessage("This finger is already enrolled at ID" + rsp.getParams() + ".");
                 enrollFail();
                 break;
+            case EnrollmentStep.DELETE_ALL:
+                Log.d(TAG, "=========================DELETE ALL FAILED: " + rsp.getError());
+                enrollState = EnrollmentStep.NOT_ENROLLING;
+                break;
             default:
-                Log.d(TAG, "doNack: error: " + rsp.getError());
-                Log.d(TAG, "doNack: -----------------enrollState: " + enrollState);
+                enrollState = EnrollmentStep.NOT_ENROLLING;
+                deviceDao.sendMessage("Error enrolling on: " + enrollNumber);
+                deviceDao.sendMessage("Error: " + rsp.getError());
                 uartManager.queueCommand(new Command(0, CommandMap.CmosLed));
                 break;
         }
@@ -277,5 +286,10 @@ public class EnrollmentManagerImpl implements EnrollmentManager {
         Log.d(TAG, "enrollUser: " + user.getUsername());
         currentUser = user;
         getEnrollStatus();
+    }
+
+    public void deleteAll() {
+        enrollState = EnrollmentStep.DELETE_ALL;
+        uartManager.queueCommand(new Command(1, CommandMap.DeleteAll));
     }
 }
