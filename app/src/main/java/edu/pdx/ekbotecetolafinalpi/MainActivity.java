@@ -41,6 +41,11 @@ public class MainActivity extends Activity {
     }
 
     private void setDeviceInfo(DeviceInfo info) {
+        /* TODO
+        Both of these managers can't listen to the same uart responses if the listener is attached
+        on the abstract parent class. I like the idea of keeping the parent class, but we need to
+        think about how to handle that listener.
+         */
         this.info = info;
         //enrollmentManager = new EnrollmentManagerImpl(uartManager, dbManager);
         //enrollmentManager.checkEnroll(2, 0, "foo");
