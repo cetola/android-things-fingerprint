@@ -2,8 +2,11 @@ package edu.pdx.ekbotecetolafinalpi.managers;
 
 import android.util.Log;
 
+import edu.pdx.ekbotecetolafinalpi.account.User;
 import edu.pdx.ekbotecetolafinalpi.dao.DeviceDao;
 import edu.pdx.ekbotecetolafinalpi.dao.DeviceDaoImpl;
+import edu.pdx.ekbotecetolafinalpi.dao.UserDao;
+import edu.pdx.ekbotecetolafinalpi.dao.UserDaoImpl;
 import edu.pdx.ekbotecetolafinalpi.states.FingerState;
 import edu.pdx.ekbotecetolafinalpi.uart.Command;
 import edu.pdx.ekbotecetolafinalpi.uart.CommandMap;
@@ -12,9 +15,11 @@ import edu.pdx.ekbotecetolafinalpi.uart.Response;
 public abstract class FiniteStateMachineManager {
 
     private static final String TAG = "FiniteStateMachineManag";
+    private FirestoreManager dbManager;
     protected UartManager uartManager;
-    protected FirestoreManager dbManager;
     protected DeviceDao deviceDao;
+    protected UserDao userDao;
+    protected User currentUser;
     protected int state = FingerState.NOT_ACTIVE;
     protected int nextState = FingerState.NOT_ACTIVE;
     protected int attempts;
@@ -25,6 +30,7 @@ public abstract class FiniteStateMachineManager {
         this.dbManager = dbManager;
         this.uartManager = uartManager;
         deviceDao = new DeviceDaoImpl();
+        userDao = new UserDaoImpl(dbManager);
         attempts = 0;
         this.uartManager.setResponseListener(new UartManager.ResponseReadyListener() {
             @Override

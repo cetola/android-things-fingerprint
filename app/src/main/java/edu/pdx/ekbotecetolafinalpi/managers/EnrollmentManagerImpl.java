@@ -25,9 +25,7 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
     private int currentFingerId;
     private int currentScannerId;
     private Enrollment currentEnrollment;
-    private User currentUser;
     private EnrollmentDao enrollmentDao;
-    private UserDao userDao;
 
     public EnrollmentManagerImpl(UartManager uartManager, FirestoreManager dbManager) {
         super(uartManager, dbManager);
@@ -232,7 +230,6 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
         Log.d(TAG, "checkEnroll: userId: " + userId);
         currentFingerId = finger;
         currentScannerId = scannerId;
-        //TODO: lock
         userDao.getUserById(userId, new OnSuccessListener<DocumentSnapshot>() {
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
