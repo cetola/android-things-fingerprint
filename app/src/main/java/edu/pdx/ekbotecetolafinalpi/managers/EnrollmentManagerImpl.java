@@ -21,8 +21,6 @@ import edu.pdx.ekbotecetolafinalpi.uart.Response;
 
 public class EnrollmentManagerImpl extends FiniteStateMachineManager implements EnrollmentManager {
     private static final String TAG = "EnrollmentManagerImpl";
-    private DeviceDao deviceDao;
-    private int attempts;
     private int enrollNumber;
     private int currentFingerId;
     private int currentScannerId;
@@ -33,16 +31,13 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
 
     public EnrollmentManagerImpl(UartManager uartManager, FirestoreManager dbManager) {
         super(uartManager, dbManager);
-        state = EnrollmentState.NOT_ENROLLING;
-        deviceDao = new DeviceDaoImpl();
         userDao = new UserDaoImpl(dbManager);
         enrollmentDao = new EnrollmentDaoImpl(dbManager);
-        attempts = 0;
     }
 
     public void doAck(Response rsp) {
         switch (state) {
-            case EnrollmentState.NOT_ENROLLING:
+            case EnrollmentState.NOT_ACTIVE:
                 //do nothing
                 break;
             case EnrollmentState.ENROLL_COUNT:
@@ -56,7 +51,7 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
                 break;
             case EnrollmentState.DELETE_ALL:
                 Log.d(TAG, "=========================DELETE ALL SUCCESS. Hope you meant it.");
-                state = EnrollmentState.NOT_ENROLLING;
+                stopStateMachine();
                 break;
             default:
                 step(rsp);
@@ -71,17 +66,16 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
                 break;
             case EnrollmentState.ENROLL_3:
                 deviceDao.sendMessage("This finger is already enrolled at ID" + rsp.getParams() + ".");
-                enrollFail();
+                stopStateMachine();
                 break;
             case EnrollmentState.DELETE_ALL:
                 Log.d(TAG, "=========================DELETE ALL FAILED: " + rsp.getError());
-                state = EnrollmentState.NOT_ENROLLING;
+                stopStateMachine();
                 break;
             default:
-                state = EnrollmentState.NOT_ENROLLING;
                 deviceDao.sendMessage("Error enrolling on: " + enrollNumber);
                 deviceDao.sendMessage("Error: " + rsp.getError());
-                uartManager.queueCommand(new Command(0, CommandMap.CmosLed));
+                stopStateMachine();
                 break;
         }
     }
@@ -142,9 +136,7 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
     }
 
     private void saveEnrollment() {
-        state = EnrollmentState.NOT_ENROLLING;
-        nextState = EnrollmentState.NOT_ENROLLING;
-        uartManager.queueCommand(new Command(0, CommandMap.CmosLed));
+        stopStateMachine();
         enrollmentDao.saveEnrollment(currentEnrollment, new OnSuccessListener<DocumentReference>() {
             @Override
             public void onSuccess(DocumentReference documentReference) {
@@ -192,32 +184,6 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
         }
     }
 
-    private void getFingerPress() {
-        attempts++;
-        if(attempts < 4) {
-            deviceDao.sendMessage("Missed your finger, try again.");
-            sendCommand(new Command(0, CommandMap.IsPressFinger));
-        } else {
-            deviceDao.sendMessage("Sorry, please start over.");
-            enrollFail();
-            attempts = 0;
-        }
-    }
-
-    private void error() {
-        Log.e(TAG, "error: got ack in enroll state: " + state);
-    }
-
-    private void enrollFail() {
-        Log.e(TAG, "enrollFail: state: " + state);
-        state = EnrollmentState.NOT_ENROLLING;
-        uartManager.queueCommand(new Command(0, CommandMap.CmosLed));
-    }
-
-    private void sendCommand(Command cmd) {
-        uartManager.queueCommand(cmd);
-    }
-
     private void getEnrollmentCount() {
         uartManager.queueCommand(new Command(0, CommandMap.GetEnrollCount));
     }
@@ -230,22 +196,35 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
     private void showEnrollStatus(Response rsp) {
         if(!rsp.getAck()) {
             deviceDao.sendMessage("Scanner ID not enrolled, enrolling...");
-            startEnrollment();
+            startStateMachine();
         } else {
             deviceDao.sendMessage("ID " + currentScannerId + " already enrolled.");
-            state = EnrollmentState.NOT_ENROLLING;
-            uartManager.queueCommand(new Command(0, CommandMap.CmosLed));
+            stopStateMachine();
         }
     }
 
-    private void startEnrollment() {
+    protected void startStateMachine() {
         currentEnrollment = new Enrollment(currentScannerId, currentFingerId, currentUser,
                 userDao.getUserRef(currentUser.getId()));
         deviceDao.sendMessage("Starting enrollment, LED ON");
+
+        //Set current and next state
         state = EnrollmentState.LED_ON;
         nextState = EnrollmentState.ENROLL_START;
+
         enrollNumber = EnrollmentState.ENROLL_START;
-        uartManager.queueCommand(new Command(1, CommandMap.CmosLed));
+        uartManager.toggleLed(uartManager.LED_ON);
+    }
+
+    private void enrollUser(User user) {
+        Log.d(TAG, "enrollUser: " + user.getUsername());
+        currentUser = user;
+        getEnrollStatus();
+    }
+
+    public void deleteAll() {
+        state = EnrollmentState.DELETE_ALL;
+        uartManager.queueCommand(new Command(1, CommandMap.DeleteAll));
     }
 
     @Override
@@ -265,16 +244,5 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
                 }
             }
         });
-    }
-
-    private void enrollUser(User user) {
-        Log.d(TAG, "enrollUser: " + user.getUsername());
-        currentUser = user;
-        getEnrollStatus();
-    }
-
-    public void deleteAll() {
-        state = EnrollmentState.DELETE_ALL;
-        uartManager.queueCommand(new Command(1, CommandMap.DeleteAll));
     }
 }

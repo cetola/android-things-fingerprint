@@ -172,7 +172,9 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
 
     private void recievedResponse(Response rsp) {
         q.addResponse(rsp);
-        responseReadyListener.onResponseReady(rsp);
+        if(responseReadyListener != null) {
+            responseReadyListener.onResponseReady(rsp);
+        }
     }
 
     @Override
@@ -218,6 +220,7 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
 
     private int sendCommand(Command cmd) {
         try {
+            Log.d(TAG, "sendCommand: " + cmd.getName());
             uartDevice.write(cmd.getData().array(), cmd.getData().array().length);
         } catch (IOException e) {
             Log.e(TAG, "sendCommand: unable to send command.", e);
@@ -249,5 +252,10 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
 
     public void setDeviceInfoReadyListener(DeviceInfoReadyListener deviceInfoListener) {
         this.deviceInfoReadyListener = deviceInfoListener;
+    }
+
+    @Override
+    public void toggleLed(int onOff) {
+        queueCommand(new Command(onOff, CommandMap.CmosLed));
     }
 }

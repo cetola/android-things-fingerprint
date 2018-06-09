@@ -13,6 +13,9 @@ public interface UartManager {
     void getDeviceInfo();
     void setResponseListener(ResponseReadyListener listener);
     void setDeviceInfoReadyListener(DeviceInfoReadyListener listener);
+    void toggleLed(int onOff);
+    int LED_OFF = 0;
+    int LED_ON = 1;
 
     interface ResponseReadyListener {
         void onResponseReady(Response response);
