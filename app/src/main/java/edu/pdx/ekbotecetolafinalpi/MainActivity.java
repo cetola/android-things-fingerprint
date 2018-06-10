@@ -17,6 +17,7 @@ import edu.pdx.ekbotecetolafinalpi.dao.DeviceDao;
 import edu.pdx.ekbotecetolafinalpi.dao.DeviceDaoImpl;
 import edu.pdx.ekbotecetolafinalpi.managers.EnrollmentManager;
 import edu.pdx.ekbotecetolafinalpi.managers.EnrollmentManagerImpl;
+import edu.pdx.ekbotecetolafinalpi.managers.ExampleManager;
 import edu.pdx.ekbotecetolafinalpi.managers.FirestoreManager;
 import edu.pdx.ekbotecetolafinalpi.managers.FirestoreManagerImpl;
 import edu.pdx.ekbotecetolafinalpi.managers.IdentificationManager;
@@ -32,6 +33,7 @@ public class MainActivity extends Activity {
     UartManager uartManager;
     EnrollmentManager enrollmentManager;
     IdentificationManager identManager;
+    ExampleManager exampleManager;
     DeviceInfo info;
     FirestoreManager dbManager;
     DeviceDao deviceDao;
@@ -51,7 +53,7 @@ public class MainActivity extends Activity {
             }
         });
         openUart();
-        uartManager.getDeviceInfo();
+        exampleManager = new ExampleManager(dbManager);
     }
 
     private void bindValues() {
