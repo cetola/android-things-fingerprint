@@ -8,6 +8,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import edu.pdx.ekbotecetolafinalpi.account.User;
 import edu.pdx.ekbotecetolafinalpi.managers.FirestoreManager;
@@ -32,6 +33,18 @@ public class UserDaoImpl implements UserDao {
     public void getUserById(String userId, OnSuccessListener<DocumentSnapshot> result) {
         DocumentReference docRef = db.collection(User.COLLECTION).document(userId);
         docRef.get().addOnSuccessListener(result)
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.e(TAG, "Failed to query database for object(s): " + User.COLLECTION);
+                    }
+                });
+    }
+
+    @Override
+    public void getUserByUsername(String username, OnSuccessListener<QuerySnapshot> result) {
+        db.collection(User.COLLECTION).whereEqualTo("username", username)
+                .get().addOnSuccessListener(result)
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
