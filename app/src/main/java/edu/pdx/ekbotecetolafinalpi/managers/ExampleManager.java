@@ -54,7 +54,7 @@ public class ExampleManager {
             public void onSuccess(DocumentSnapshot documentSnapshot) {
                 if(documentSnapshot.exists()) {
                     User u = documentSnapshot.toObject(User.class);
-                    u.setId(userId);
+                    u.setId(documentSnapshot.getId());
                     mUser = u;
                     doPrintUser();
                 }
