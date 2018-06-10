@@ -14,6 +14,7 @@ public class User {
     public static final String COLLECTION = "users";
 
     public User() {
+        created = new Timestamp(new Date());
     }
 
     public User(String firstName, String lastName, String username) {
