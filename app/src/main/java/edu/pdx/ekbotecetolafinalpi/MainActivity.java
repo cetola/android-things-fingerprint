@@ -13,7 +13,6 @@ import java.util.List;
 
 import edu.pdx.ekbotecetolafinalpi.account.CurrentUser;
 import edu.pdx.ekbotecetolafinalpi.account.DeviceInfo;
-import edu.pdx.ekbotecetolafinalpi.account.User;
 import edu.pdx.ekbotecetolafinalpi.dao.DeviceDao;
 import edu.pdx.ekbotecetolafinalpi.dao.DeviceDaoImpl;
 import edu.pdx.ekbotecetolafinalpi.managers.EnrollmentManager;

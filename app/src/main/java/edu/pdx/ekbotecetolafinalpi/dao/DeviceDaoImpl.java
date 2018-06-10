@@ -15,8 +15,8 @@ public class DeviceDaoImpl implements DeviceDao {
     }
 
     @Override
-    public void sendMessage(String message) {
-        Log.d(TAG, "------------------sendMessage: " + message);
+    public void setRegisterFingerprintMsg(String message) {
+        Log.d(TAG, "------------------setRegisterFingerprintMsg: " + message);
         dbManager.setRealtimeData(RegisterFingerprintMsg.COLLECTION, message);
     }
 
