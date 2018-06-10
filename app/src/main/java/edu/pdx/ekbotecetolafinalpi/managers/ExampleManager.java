@@ -29,11 +29,14 @@ public class ExampleManager {
         rand = new Random();
         this.dbManager = dbManager;
         userDao = new UserDaoImpl(dbManager);
-        doBind();
+        doBindRealtime();
         doUserSaveExample();
     }
 
-    private void doBind() {
+    /**
+     * realtime database "listen for change" example.
+     */
+    private void doBindRealtime() {
         dbManager.bindRealtimeData(RegisterFingerprint.COLLECTION, new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -52,6 +55,9 @@ public class ExampleManager {
         return rand.nextInt(500);
     }
 
+    /**
+     * Firestore "save user" example.
+     */
     private void doUserSaveExample() {
         final User user = new User();
         user.setFirstName("exFirst" + getPostfix());
@@ -68,6 +74,9 @@ public class ExampleManager {
         });
     }
 
+    /**
+     * Firestore "get user" example.
+     */
     private void doUserGetExample() {
         final String userId = mUser.getId();
         mUser = null;
@@ -86,6 +95,9 @@ public class ExampleManager {
         });
     }
 
+    /**
+     * Realtime Database "set value" example.
+     */
     private void updateRegFingerPrint() {
         dbManager.setRealtimeData(RegisterFingerprint.COLLECTION, RegisterFingerprint.FAILED);
     }
