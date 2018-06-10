@@ -7,6 +7,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 
 import edu.pdx.ekbotecetolafinalpi.account.Enrollment;
+import edu.pdx.ekbotecetolafinalpi.realtime.RegisterFingerprint;
 import edu.pdx.ekbotecetolafinalpi.realtime.RegisterFingerprintMsg;
 import edu.pdx.ekbotecetolafinalpi.states.EnrollmentState;
 import edu.pdx.ekbotecetolafinalpi.account.User;
@@ -62,6 +63,7 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
                 break;
             case EnrollmentState.ENROLL_3:
                 deviceDao.setRegisterFingerprintMsg(RegisterFingerprintMsg.TRY);
+                deviceDao.setRegisterFingerprintStatus(RegisterFingerprint.FAILED);
                 Log.d(TAG, "This finger is already enrolled at ID" + rsp.getParams() + ".");
                 stopStateMachine();
                 break;
@@ -71,6 +73,7 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
                 break;
             default:
                 deviceDao.setRegisterFingerprintMsg(RegisterFingerprintMsg.TRY);
+                deviceDao.setRegisterFingerprintStatus(RegisterFingerprint.FAILED);
                 Log.d(TAG, "Error enrolling on: " + enrollNumber);
                 Log.d(TAG, "Error: " + rsp.getError());
                 stopStateMachine();
@@ -108,6 +111,7 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
             case EnrollmentState.ENROLL_START:
                 attempts = 0;
                 deviceDao.setRegisterFingerprintMsg(RegisterFingerprintMsg.PLACE);
+                deviceDao.setRegisterFingerprintStatus(RegisterFingerprint.START);
                 getNextTemplate();
                 break;
             case EnrollmentState.ENROLL_1:
@@ -122,7 +126,6 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
                 break;
             case EnrollmentState.ENROLL_3:
                 attempts = 0;
-                deviceDao.setRegisterFingerprintMsg(RegisterFingerprintMsg.NONE);
                 saveEnrollment();
                 break;
             case EnrollmentState.CAPTURE_FINGER:
@@ -141,6 +144,8 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
                 Log.d(TAG, "onSuccess: Saved Enrollment: " + documentReference.getId());
             }
         });
+        deviceDao.setRegisterFingerprintMsg(RegisterFingerprintMsg.NONE);
+        deviceDao.setRegisterFingerprintStatus(RegisterFingerprint.FINISHED);
     }
 
     private void getNextTemplate() {
@@ -187,7 +192,7 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
     }
 
     private void showCount(Response rsp) {
-        deviceDao.setRegisterFingerprintMsg("Got count: " + rsp.getParams());
+        Log.d(TAG, "Got count: " + rsp.getParams());
         getEnrollStatus();
     }
 
@@ -198,6 +203,7 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
         } else {
             Log.d(TAG, "ID " + currentScannerId + " already enrolled.");
             deviceDao.setRegisterFingerprintMsg(RegisterFingerprintMsg.NONE);
+            deviceDao.setRegisterFingerprintStatus(RegisterFingerprint.FAILED);
             stopStateMachine();
         }
     }
