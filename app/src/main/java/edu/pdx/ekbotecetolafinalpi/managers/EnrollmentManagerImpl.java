@@ -235,7 +235,6 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
                 if(documentSnapshot.exists()) {
-                    //TODO: not sure why the ID doesn't get returned on the doc snapshot
                     User u = documentSnapshot.toObject(User.class);
                     u.setId(userId);
                     enrollUser(u);
