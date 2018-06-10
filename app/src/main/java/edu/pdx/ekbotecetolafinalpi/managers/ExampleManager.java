@@ -9,6 +9,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.Random;
 
@@ -69,15 +71,15 @@ public class ExampleManager {
                 user.setId(documentReference.getId());
                 mUser = user;
                 doPrintUser();
-                doUserGetExample();
+                doGetUserById();
             }
         });
     }
 
     /**
-     * Firestore "get user" example.
+     * Firestore "get user by id" example.
      */
-    private void doUserGetExample() {
+    private void doGetUserById() {
         final String userId = mUser.getId();
         mUser = null;
 
@@ -89,7 +91,33 @@ public class ExampleManager {
                     u.setId(documentSnapshot.getId());
                     mUser = u;
                     doPrintUser();
-                    updateRegFingerPrint();
+                    doGetUserByUsername();
+                }
+            }
+        });
+    }
+
+    /**
+     * Firestore "get user by id" example.
+     */
+    private void doGetUserByUsername() {
+        final String username = mUser.getUsername();
+        mUser = null;
+        userDao.getUserByUsername(username, new OnSuccessListener<QuerySnapshot>() {
+            @Override
+            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                if (queryDocumentSnapshots.size() > 0) {
+                    Log.d(TAG, queryDocumentSnapshots.size() + " users found with that username");
+                    for(QueryDocumentSnapshot snapshot : queryDocumentSnapshots) {
+                        mUser = snapshot.toObject(User.class);
+                        mUser.setId(snapshot.getId());
+                        doPrintUser();
+                        updateRegFingerPrint();
+                        //just get the first user
+                        break;
+                    }
+                } else {
+                    Log.d(TAG, "no users found with that username");
                 }
             }
         });
