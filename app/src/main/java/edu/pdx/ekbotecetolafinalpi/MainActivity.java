@@ -56,7 +56,7 @@ public class MainActivity extends Activity {
     }
 
     private void bindValues() {
-        dbManager.bindRealtimeData(RegisterFingerprint.class.getSimpleName(), new ValueEventListener() {
+        dbManager.bindRealtimeData(RegisterFingerprint.COLLECTION, new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 String val = dataSnapshot.getValue(String.class);
@@ -65,10 +65,10 @@ public class MainActivity extends Activity {
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                Log.i(TAG, "Bind canceled: " + RegisterFingerprint.class.getSimpleName());
+                Log.i(TAG, "Bind canceled: " + RegisterFingerprint.COLLECTION);
             }
         });
-        dbManager.bindRealtimeData(UnlockStatus.class.getSimpleName(), new ValueEventListener() {
+        dbManager.bindRealtimeData(UnlockStatus.COLLECTION, new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 String val = dataSnapshot.getValue(String.class);
@@ -77,7 +77,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                Log.i(TAG, "Bind canceled: " + UnlockStatus.class.getSimpleName());
+                Log.i(TAG, "Bind canceled: " + UnlockStatus.COLLECTION);
             }
         });
     }

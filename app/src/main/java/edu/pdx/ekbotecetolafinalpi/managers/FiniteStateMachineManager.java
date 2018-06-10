@@ -51,7 +51,7 @@ public abstract class FiniteStateMachineManager {
     abstract void doNack(Response rsp);
 
     protected void stopStateMachine() {
-        deviceDao.sendMessage("Stopping the state machine.");
+        Log.d(TAG, "Stopping the state machine.");
         state = FingerState.NOT_ACTIVE;
         nextState = FingerState.NOT_ACTIVE;
         uartManager.toggleLed(uartManager.LED_OFF);
@@ -60,15 +60,15 @@ public abstract class FiniteStateMachineManager {
     protected void sendCommand(Command cmd) {
         uartManager.queueCommand(cmd);
     }
-    protected void getFingerPress() {
+    protected boolean getFingerPress() {
         attempts++;
         if(attempts < MAX_ATTEMPTS) {
-            deviceDao.sendMessage("Missed your finger, try again.");
             sendCommand(new Command(0, CommandMap.IsPressFinger));
+            return true;
         } else {
-            deviceDao.sendMessage("Sorry, missed finger too much. Please start over.");
             stopStateMachine();
             attempts = 0;
+            return false;
         }
     }
 

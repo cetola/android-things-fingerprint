@@ -27,7 +27,7 @@ public class IdentificationManagerImpl extends FiniteStateMachineManager impleme
 
     @Override
     protected void startStateMachine() {
-        deviceDao.sendMessage("startStateMachine");
+        Log.d(TAG, "startStateMachine");
         state = IdentificationState.LED_ON;
         nextState = IdentificationState.FINGER_PRESS;
         uartManager.toggleLed(uartManager.LED_ON);
@@ -53,11 +53,11 @@ public class IdentificationManagerImpl extends FiniteStateMachineManager impleme
                 break;
             case IdentificationState.IDENT_START:
                 Log.d(TAG, "Not authorized.");
-                deviceDao.sendMessage(UnlockStatus.FAIL);
+                deviceDao.setUnlockStatus(UnlockStatus.FAIL);
                 stopStateMachine();
                 break;
             default:
-                deviceDao.sendMessage(UnlockStatus.FAIL);
+                deviceDao.setUnlockStatus(UnlockStatus.FAIL);
                 Log.d(TAG, "Error IDENT on state: " + state);
                 Log.d(TAG, "Error: " + rsp.getError());
                 stopStateMachine();
@@ -68,25 +68,27 @@ public class IdentificationManagerImpl extends FiniteStateMachineManager impleme
     private void step(Response rsp) {
         switch (state) {
             case IdentificationState.LED_ON:
-                deviceDao.sendMessage(UnlockStatus.PROCESS);
+                deviceDao.setUnlockStatus(UnlockStatus.PROCESS);
                 state = nextState;
                 nextState = IdentificationState.CAPTURE_FINGER;
                 uartManager.queueCommand(new Command(0, CommandMap.IsPressFinger));
                 break;
             case IdentificationState.FINGER_PRESS:
                 if(rsp.getParams() > 0) {
-                    getFingerPress();
+                    if(!getFingerPress()) {
+                        deviceDao.setUnlockStatus(UnlockStatus.FAIL);
+                    }
                 } else {
                     state = nextState;
                     nextState = IdentificationState.IDENT_START;
-                    deviceDao.sendMessage(UnlockStatus.PROCESS);
+                    deviceDao.setUnlockStatus(UnlockStatus.PROCESS);
                     sendCommand(new Command(0, CommandMap.CaptureFinger));
                 }
                 break;
             case IdentificationState.CAPTURE_FINGER:
                 state = nextState;
                 nextState = IdentificationState.NOT_ACTIVE;
-                deviceDao.sendMessage(UnlockStatus.PROCESS);
+                deviceDao.setUnlockStatus(UnlockStatus.PROCESS);
                 sendCommand(new Command(0, CommandMap.Identify1_N));
                 break;
             case IdentificationState.IDENT_START:
@@ -99,7 +101,7 @@ public class IdentificationManagerImpl extends FiniteStateMachineManager impleme
                     }
                 });
                 //TODO: unlock the box
-                deviceDao.sendMessage(UnlockStatus.UNLOCKED);
+                deviceDao.setUnlockStatus(UnlockStatus.UNLOCKED);
                 break;
             default:
                 Log.d(TAG, "step: " + state);
