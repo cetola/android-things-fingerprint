@@ -115,7 +115,6 @@ public class IdentificationManagerImpl extends FiniteStateMachineManager impleme
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
                 if(documentSnapshot.exists()) {
-                    //TODO: not sure why the ID doesn't get returned on the doc snapshot
                     User u = documentSnapshot.toObject(User.class);
                     u.setId(userId);
                     setCurrentUser(u);
