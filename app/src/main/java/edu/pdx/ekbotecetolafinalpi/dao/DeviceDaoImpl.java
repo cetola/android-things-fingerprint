@@ -3,6 +3,7 @@ package edu.pdx.ekbotecetolafinalpi.dao;
 import android.util.Log;
 
 import edu.pdx.ekbotecetolafinalpi.managers.FirestoreManager;
+import edu.pdx.ekbotecetolafinalpi.realtime.RegisterFingerprint;
 import edu.pdx.ekbotecetolafinalpi.realtime.RegisterFingerprintMsg;
 import edu.pdx.ekbotecetolafinalpi.realtime.UnlockStatus;
 
@@ -18,6 +19,12 @@ public class DeviceDaoImpl implements DeviceDao {
     public void setRegisterFingerprintMsg(String message) {
         Log.d(TAG, "------------------setRegisterFingerprintMsg: " + message);
         dbManager.setRealtimeData(RegisterFingerprintMsg.COLLECTION, message);
+    }
+
+    @Override
+    public void setRegisterFingerprintStatus(String status) {
+        Log.d(TAG, "------------------setRegisterFingerprint: " + status);
+        dbManager.setRealtimeData(RegisterFingerprint.COLLECTION, status);
     }
 
     @Override
