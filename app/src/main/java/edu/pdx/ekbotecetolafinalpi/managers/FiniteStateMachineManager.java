@@ -29,7 +29,7 @@ public abstract class FiniteStateMachineManager {
         this.uartManager = uartManager;
         this.dbManager = dbManager;
         this.uartManager = uartManager;
-        deviceDao = new DeviceDaoImpl();
+        deviceDao = new DeviceDaoImpl(dbManager);
         userDao = new UserDaoImpl(dbManager);
         attempts = 0;
         this.uartManager.setResponseListener(new UartManager.ResponseReadyListener() {

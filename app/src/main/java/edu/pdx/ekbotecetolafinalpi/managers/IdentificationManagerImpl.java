@@ -10,6 +10,7 @@ import edu.pdx.ekbotecetolafinalpi.account.History;
 import edu.pdx.ekbotecetolafinalpi.account.User;
 import edu.pdx.ekbotecetolafinalpi.dao.HistoryDao;
 import edu.pdx.ekbotecetolafinalpi.dao.HistoryDaoImpl;
+import edu.pdx.ekbotecetolafinalpi.realtime.UnlockStatus;
 import edu.pdx.ekbotecetolafinalpi.states.IdentificationState;
 import edu.pdx.ekbotecetolafinalpi.uart.Command;
 import edu.pdx.ekbotecetolafinalpi.uart.CommandMap;
@@ -51,12 +52,14 @@ public class IdentificationManagerImpl extends FiniteStateMachineManager impleme
                 //do nothing
                 break;
             case IdentificationState.IDENT_START:
-                deviceDao.sendMessage("Not authorized.");
+                Log.d(TAG, "Not authorized.");
+                deviceDao.sendMessage(UnlockStatus.FAIL);
                 stopStateMachine();
                 break;
             default:
-                deviceDao.sendMessage("Error IDENT on state: " + state);
-                deviceDao.sendMessage("Error: " + rsp.getError());
+                deviceDao.sendMessage(UnlockStatus.FAIL);
+                Log.d(TAG, "Error IDENT on state: " + state);
+                Log.d(TAG, "Error: " + rsp.getError());
                 stopStateMachine();
                 break;
         }
@@ -65,7 +68,7 @@ public class IdentificationManagerImpl extends FiniteStateMachineManager impleme
     private void step(Response rsp) {
         switch (state) {
             case IdentificationState.LED_ON:
-                deviceDao.sendMessage("Place finger for identification...");
+                deviceDao.sendMessage(UnlockStatus.PROCESS);
                 state = nextState;
                 nextState = IdentificationState.CAPTURE_FINGER;
                 uartManager.queueCommand(new Command(0, CommandMap.IsPressFinger));
@@ -76,18 +79,18 @@ public class IdentificationManagerImpl extends FiniteStateMachineManager impleme
                 } else {
                     state = nextState;
                     nextState = IdentificationState.IDENT_START;
-                    deviceDao.sendMessage("Capturing finger...(keep pressing)");
+                    deviceDao.sendMessage(UnlockStatus.PROCESS);
                     sendCommand(new Command(0, CommandMap.CaptureFinger));
                 }
                 break;
             case IdentificationState.CAPTURE_FINGER:
                 state = nextState;
                 nextState = IdentificationState.NOT_ACTIVE;
-                deviceDao.sendMessage("Identify finger...(you can lift your finger)");
+                deviceDao.sendMessage(UnlockStatus.PROCESS);
                 sendCommand(new Command(0, CommandMap.Identify1_N));
                 break;
             case IdentificationState.IDENT_START:
-                deviceDao.sendMessage("Finger Identified as Scanner ID: " + rsp.getParams());
+                Log.d(TAG, "Finger Identified as Scanner ID: " + rsp.getParams());
                 stopStateMachine();
                 historyDao.saveHistory(new History(currentUser.getUsername()), new OnSuccessListener<DocumentReference>() {
                     @Override
@@ -95,6 +98,8 @@ public class IdentificationManagerImpl extends FiniteStateMachineManager impleme
                         Log.d(TAG, "saveHistory: onSuccess: saved history " + documentReference.getId());
                     }
                 });
+                //TODO: unlock the box
+                deviceDao.sendMessage(UnlockStatus.UNLOCKED);
                 break;
             default:
                 Log.d(TAG, "step: " + state);
