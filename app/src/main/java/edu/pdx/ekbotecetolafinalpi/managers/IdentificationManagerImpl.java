@@ -3,8 +3,14 @@ package edu.pdx.ekbotecetolafinalpi.managers;
 import android.util.Log;
 
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.things.pio.Gpio;
+import com.google.android.things.pio.PeripheralManager;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+
+import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import edu.pdx.ekbotecetolafinalpi.account.History;
 import edu.pdx.ekbotecetolafinalpi.account.User;
@@ -16,13 +22,20 @@ import edu.pdx.ekbotecetolafinalpi.uart.Command;
 import edu.pdx.ekbotecetolafinalpi.uart.CommandMap;
 import edu.pdx.ekbotecetolafinalpi.uart.Response;
 
+/**
+ * Implements the "identification" tasks as a Finite State Machine (FSM). Uses the list of states
+ * from the {@link IdentificationState} object. Since there is no "clock" we use the "ACK" or "NACK"
+ * of the fingerprint scanner {@link Response} as the clock.
+ */
 public class IdentificationManagerImpl extends FiniteStateMachineManager implements IdentificationManager {
     private static final String TAG = "IdentificationManagerIm";
     private HistoryDao historyDao;
+    private GpioManager gpioManager;
 
-    public IdentificationManagerImpl(UartManager uartManager, FirestoreManager dbManager) {
+    public IdentificationManagerImpl(UartManager uartManager, FirestoreManager dbManager, GpioManager gpioManager) {
         super(uartManager, dbManager);
         historyDao = new HistoryDaoImpl(dbManager);
+        this.gpioManager = gpioManager;
     }
 
     @Override
@@ -37,7 +50,7 @@ public class IdentificationManagerImpl extends FiniteStateMachineManager impleme
     void doAck(Response rsp) {
         switch (state) {
             case IdentificationState.NOT_ACTIVE:
-                //do nothing
+                //do nothing if this response is not meant for us.
                 break;
             default:
                 step(rsp);
@@ -64,7 +77,11 @@ public class IdentificationManagerImpl extends FiniteStateMachineManager impleme
                 break;
         }
     }
-    
+
+    /**
+     * Stop through the process of identifying a user and triggering the lock.
+     * @param rsp
+     */
     private void step(Response rsp) {
         switch (state) {
             case IdentificationState.LED_ON:
@@ -100,7 +117,7 @@ public class IdentificationManagerImpl extends FiniteStateMachineManager impleme
                         Log.d(TAG, "saveHistory: onSuccess: saved history " + documentReference.getId());
                     }
                 });
-                //TODO: unlock the box
+                gpioManager.unlockBox();
                 deviceDao.setUnlockStatus(UnlockStatus.UNLOCKED);
                 break;
             default:
@@ -109,6 +126,10 @@ public class IdentificationManagerImpl extends FiniteStateMachineManager impleme
         }
     }
 
+    /**
+     * If the user is found in the datastore, set the current user.
+     * @param userId
+     */
     @Override
     public void identifyFinger(final String userId) {
         userDao.getUserById(userId, new OnSuccessListener<DocumentSnapshot>() {
@@ -123,6 +144,10 @@ public class IdentificationManagerImpl extends FiniteStateMachineManager impleme
         });
     }
 
+    /**
+     * Sets the current user and starts the state machine.
+     * @param u
+     */
     private void setCurrentUser(User u) {
         this.currentUser = u;
         startStateMachine();

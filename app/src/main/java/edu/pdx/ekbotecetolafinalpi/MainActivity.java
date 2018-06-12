@@ -26,6 +26,8 @@ import edu.pdx.ekbotecetolafinalpi.managers.EnrollmentManager;
 import edu.pdx.ekbotecetolafinalpi.managers.EnrollmentManagerImpl;
 import edu.pdx.ekbotecetolafinalpi.managers.FirestoreManager;
 import edu.pdx.ekbotecetolafinalpi.managers.FirestoreManagerImpl;
+import edu.pdx.ekbotecetolafinalpi.managers.GpioManager;
+import edu.pdx.ekbotecetolafinalpi.managers.GpioManagerImpl;
 import edu.pdx.ekbotecetolafinalpi.managers.IdentificationManager;
 import edu.pdx.ekbotecetolafinalpi.managers.IdentificationManagerImpl;
 import edu.pdx.ekbotecetolafinalpi.managers.UartManager;
@@ -37,6 +39,7 @@ public class MainActivity extends Activity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     UartManager uartManager;
+    GpioManager gpioManager;
     EnrollmentManager enrollmentManager;
     EnrollmentDao enrollmentDao;
     IdentificationManager identManager;
@@ -50,6 +53,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         dbManager = new FirestoreManagerImpl();
+        gpioManager = new GpioManagerImpl();
         enrollmentDao = new EnrollmentDaoImpl(dbManager);
         deviceDao = new DeviceDaoImpl(dbManager);
         uartManager = new UartManagerImpl(dbManager);
@@ -65,6 +69,13 @@ public class MainActivity extends Activity {
         uartManager.getDeviceInfo();
     }
 
+    /**
+     * We need to know which scanner IDs have been used already. By querying the Enrollment documents
+     * we can make a list of the scanner IDs. For larger systems this might want to be its own
+     * document collection.
+     * @param user The current user attempting to enroll. This is required to pass along to the
+     *             doEnroll function.
+     */
     private void getScannerIdList(final CurrentUser user) {
         enrollmentDao.getEnrollments(new OnSuccessListener<QuerySnapshot>() {
             @Override
@@ -82,6 +93,10 @@ public class MainActivity extends Activity {
         });
     }
 
+    /**
+     * Bind to the UnlockStatus and the RegisterFingerpring realtime fields. This tells us when
+     * the Android Device is attempting to unlock or register a fingerprint (enroll).
+     */
     private void bindValues() {
         dbManager.bindRealtimeData(RegisterFingerprint.COLLECTION, new ValueEventListener() {
             @Override
@@ -109,6 +124,10 @@ public class MainActivity extends Activity {
         });
     }
 
+    /**
+     * Check the value of the RegisterFingerprint realtime variable and wait for the START condition.
+     * @param val The variable's new value.
+     */
     private void enrollChange(String val) {
         if (val.equals(RegisterFingerprint.START)) {
             dbManager.getRealtimeData(CurrentUser.COLLECTION, new ValueEventListener() {
@@ -133,6 +152,10 @@ public class MainActivity extends Activity {
         }
     }
 
+    /**
+     * Check the value of the UnlockStatus realtime variable and wait for the REQUEST condition.
+     * @param val The variable's new value.
+     */
     private void identChange(String val) {
         if(val.equals(UnlockStatus.REQUEST)) {
             dbManager.getRealtimeData(CurrentUser.COLLECTION, new ValueEventListener() {
@@ -157,10 +180,20 @@ public class MainActivity extends Activity {
         }
     }
 
+    /**
+     * The device info would be used if the app changes in the future to support things like
+     * facial recognition scanners or retina scanners.
+     * @param info
+     */
     private void setDeviceInfo(DeviceInfo info) {
         this.info = info;
     }
 
+    /**
+     * Start the enrollment process
+     * @param finger which finger the user is registering
+     * @param userId the user id for the current user
+     */
     private void doEnroll(int finger, String userId) {
         int scannerId = getScannerId();
         enrollmentManager = new EnrollmentManagerImpl(uartManager, dbManager);
@@ -182,17 +215,27 @@ public class MainActivity extends Activity {
         }
     }
 
+    /**
+     * Start the identification process to unlock the box.
+     * @param userId The user id trying to unlock.
+     */
     private void doIdent(String userId) {
-        identManager = new IdentificationManagerImpl(uartManager, dbManager);
+        identManager = new IdentificationManagerImpl(uartManager, dbManager, gpioManager);
         identManager.identifyFinger(userId);
     }
 
+    /**
+     * This method is for debugging and testing. Deletes all the data stored on the scanner.
+     */
     private void doDeleteAll() {
         //DANGER ZONE
         enrollmentManager = new EnrollmentManagerImpl(uartManager, dbManager);
         enrollmentManager.deleteAll();
     }
 
+    /**
+     * Open the UART plugged into USB1.
+     */
     private void openUart() {
         List<String> devices = uartManager.getDeviceList();
         String myDevice = "";
