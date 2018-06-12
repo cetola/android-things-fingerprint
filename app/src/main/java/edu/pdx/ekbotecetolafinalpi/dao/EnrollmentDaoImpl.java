@@ -7,6 +7,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import edu.pdx.ekbotecetolafinalpi.account.Enrollment;
 import edu.pdx.ekbotecetolafinalpi.account.User;
@@ -36,6 +37,18 @@ public class EnrollmentDaoImpl implements EnrollmentDao {
                     @Override
                     public void onFailure(@NonNull Exception e) {
                         Log.w(TAG, "Error adding document", e);
+                    }
+                });
+    }
+
+    @Override
+    public void getEnrollments(OnSuccessListener<QuerySnapshot> results) {
+        db.collection(Enrollment.COLLECTION)
+                .get().addOnSuccessListener(results)
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.e(TAG, "Failed to query database for object(s): " + User.COLLECTION);
                     }
                 });
     }

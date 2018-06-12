@@ -5,16 +5,23 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.QuerySnapshot;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import edu.pdx.ekbotecetolafinalpi.account.CurrentUser;
 import edu.pdx.ekbotecetolafinalpi.account.DeviceInfo;
+import edu.pdx.ekbotecetolafinalpi.account.Enrollment;
 import edu.pdx.ekbotecetolafinalpi.dao.DeviceDao;
 import edu.pdx.ekbotecetolafinalpi.dao.DeviceDaoImpl;
+import edu.pdx.ekbotecetolafinalpi.dao.EnrollmentDao;
+import edu.pdx.ekbotecetolafinalpi.dao.EnrollmentDaoImpl;
 import edu.pdx.ekbotecetolafinalpi.managers.EnrollmentManager;
 import edu.pdx.ekbotecetolafinalpi.managers.EnrollmentManagerImpl;
 import edu.pdx.ekbotecetolafinalpi.managers.FirestoreManager;
@@ -31,18 +38,22 @@ public class MainActivity extends Activity {
     private static final String TAG = MainActivity.class.getSimpleName();
     UartManager uartManager;
     EnrollmentManager enrollmentManager;
+    EnrollmentDao enrollmentDao;
     IdentificationManager identManager;
     DeviceInfo info;
     FirestoreManager dbManager;
     DeviceDao deviceDao;
+    List<Integer> scannerIds;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         dbManager = new FirestoreManagerImpl();
+        enrollmentDao = new EnrollmentDaoImpl(dbManager);
         deviceDao = new DeviceDaoImpl(dbManager);
         uartManager = new UartManagerImpl(dbManager);
+        scannerIds = new ArrayList<>();
         uartManager.setDeviceInfoReadyListener(new UartManager.DeviceInfoReadyListener() {
             @Override
             public void onDeviceInfoReady(DeviceInfo info) {
@@ -52,6 +63,23 @@ public class MainActivity extends Activity {
         });
         openUart();
         uartManager.getDeviceInfo();
+    }
+
+    private void getScannerIdList(final CurrentUser user) {
+        enrollmentDao.getEnrollments(new OnSuccessListener<QuerySnapshot>() {
+            @Override
+            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                if (queryDocumentSnapshots.isEmpty()) {
+                    Log.d(TAG, "No enrollments found.");
+                } else {
+                    List<Enrollment> enrollments = queryDocumentSnapshots.toObjects(Enrollment.class);
+                    for(Enrollment e : enrollments) {
+                        scannerIds.add(e.getScannerId());
+                    }
+                }
+                doEnroll(user.getFingerId(), user.getUserId());
+            }
+        });
     }
 
     private void bindValues() {
@@ -88,7 +116,7 @@ public class MainActivity extends Activity {
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     CurrentUser user = dataSnapshot.getValue(CurrentUser.class);
                     if(user != null) {
-                        doEnroll(user.getFingerId(), user.getUserId());
+                        getScannerIdList(user);
                     } else {
                         Log.e(TAG, "Could not find current user.");
                     }
@@ -139,8 +167,19 @@ public class MainActivity extends Activity {
         enrollmentManager.checkEnroll(scannerId, finger, userId);
     }
 
+    /**
+     * Return a value of 0-199 for a fingerprint ID.
+     * Used fingerprint IDs are stored to the database.
+     * @return
+     */
     private int getScannerId() {
-        return 0;
+        int nextScannerId = 0;
+        if(scannerIds.size() == 0) {
+            return nextScannerId;
+        } else {
+            Collections.sort(scannerIds);
+            return scannerIds.get(scannerIds.size()) + 1;
+        }
     }
 
     private void doIdent(String userId) {
@@ -150,6 +189,7 @@ public class MainActivity extends Activity {
 
     private void doDeleteAll() {
         //DANGER ZONE
+        enrollmentManager = new EnrollmentManagerImpl(uartManager, dbManager);
         enrollmentManager.deleteAll();
     }
 
