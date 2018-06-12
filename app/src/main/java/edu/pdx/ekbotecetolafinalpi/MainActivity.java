@@ -178,7 +178,7 @@ public class MainActivity extends Activity {
             return nextScannerId;
         } else {
             Collections.sort(scannerIds);
-            return scannerIds.get(scannerIds.size()) + 1;
+            return scannerIds.get(scannerIds.size()-1) + 1;
         }
     }
 

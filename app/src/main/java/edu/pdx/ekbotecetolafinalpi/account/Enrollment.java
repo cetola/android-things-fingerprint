@@ -11,6 +11,10 @@ public class Enrollment {
     private DocumentReference userRef;
     public static final String COLLECTION = "enrollments";
 
+    public Enrollment() {
+
+    }
+
     public Enrollment(int scannerId, int finger, User user, DocumentReference userRef) {
         setScannerId(scannerId);
         setFinger(finger);
