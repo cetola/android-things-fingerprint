@@ -1,9 +1,10 @@
 package edu.pdx.ekbotecetolafinalpi.uart;
 
-import com.google.firebase.Timestamp;
-
-import java.util.Date;
-
+/**
+ * In order to make debugging easier, this object can be persisted to the Firestore.
+ *
+ * This also contains convenience methods for doing things like setting the checksum.
+ */
 public class Command extends Message {
     public static final String COLLECTION = "commands";
     private static final int CMD_OFFSET = 8;

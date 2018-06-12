@@ -1,5 +1,10 @@
 package edu.pdx.ekbotecetolafinalpi.account;
 
+/**
+ * DeviceInfo object does not currently get save to the database.
+ *
+ * This can be used in the future to provide information about the fingerprint device to the user.
+ */
 public class DeviceInfo {
     private String firmwareVersion;
     private String isoMaxSize;

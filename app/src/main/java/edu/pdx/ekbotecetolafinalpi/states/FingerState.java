@@ -1,5 +1,8 @@
 package edu.pdx.ekbotecetolafinalpi.states;
 
+/**
+ * States commmon to all Fingerprint reader state machines.
+ */
 public abstract class FingerState {
     public static final int NOT_ACTIVE = -1;
     public static final int FINGER_PRESS = -2;

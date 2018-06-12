@@ -24,11 +24,6 @@ public class EnrollmentDaoImpl implements EnrollmentDao {
     }
 
     @Override
-    public void getEnrollmentByUser(User user, OnSuccessListener<DocumentReference> result) {
-
-    }
-
-    @Override
     public void saveEnrollment(Enrollment enrollment, OnSuccessListener<DocumentReference> result) {
         db.collection(Enrollment.COLLECTION)
                 .add(enrollment)

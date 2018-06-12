@@ -18,6 +18,11 @@ import edu.pdx.ekbotecetolafinalpi.uart.Command;
 import edu.pdx.ekbotecetolafinalpi.uart.CommandMap;
 import edu.pdx.ekbotecetolafinalpi.uart.Response;
 
+/**
+ * Implements the "enrollment" tasks as a Finite State Machine (FSM). Uses the list of states
+ * from the {@link EnrollmentState} object. Since there is no "clock" we use the "ACK" or "NACK"
+ * of the fingerprint scanner {@link Response} as the clock.
+ */
 public class EnrollmentManagerImpl extends FiniteStateMachineManager implements EnrollmentManager {
     private static final String TAG = "EnrollmentManagerImpl";
     private int enrollNumber;
@@ -35,10 +40,7 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
     public void doAck(Response rsp) {
         switch (state) {
             case EnrollmentState.NOT_ACTIVE:
-                //do nothing
-                break;
-            case EnrollmentState.ENROLL_COUNT:
-                showCount(rsp);
+                //do nothing if we are not currently running
                 break;
             case EnrollmentState.CHECK_ENROLLED:
                 showEnrollStatus(rsp);
@@ -81,16 +83,16 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
         }
     }
 
-    private void getEnrollCount() {
-        this.state = EnrollmentState.ENROLL_COUNT;
-        uartManager.queueCommand(new Command(0, CommandMap.GetEnrollCount));
-    }
-
     private void getEnrollStatus() {
         this.state = EnrollmentState.CHECK_ENROLLED;
         uartManager.queueCommand(new Command(currentScannerId, CommandMap.CheckEnrolled));
     }
 
+    /**
+     * Step through the process of registering a fingerprint with the scanner.
+     * Return status as needed using the RegisterFingerprintMsg.
+     * @param rsp
+     */
     private void step(Response rsp) {
         switch (state) {
             case EnrollmentState.LED_ON:
@@ -136,6 +138,9 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
         }
     }
 
+    /**
+     * On successful enrollment of a fingerprint, save the enrollment data to the Firestore.
+     */
     private void saveEnrollment() {
         stopStateMachine();
         enrollmentDao.saveEnrollment(currentEnrollment, new OnSuccessListener<DocumentReference>() {
@@ -148,6 +153,10 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
         deviceDao.setRegisterFingerprintStatus(RegisterFingerprint.FINISHED);
     }
 
+    /**
+     * Starts the process of getting a "fingerprint template". After acquiring 3 templates the
+     * scanner will average the three to generate the final template.
+     */
     private void getNextTemplate() {
         state = nextState;
         nextState = EnrollmentState.CAPTURE_FINGER;
@@ -155,6 +164,10 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
         sendCommand(new Command(0, CommandMap.IsPressFinger));
     }
 
+    /**
+     * Depending on the number of enroll steps we have completed, we'll need to send the
+     * correct command to the sensor.
+     */
     private void sendEnrollCommand() {
         switch (enrollNumber) {
             case EnrollmentState.ENROLL_START:
@@ -187,15 +200,12 @@ public class EnrollmentManagerImpl extends FiniteStateMachineManager implements 
         }
     }
 
-    private void getEnrollmentCount() {
-        uartManager.queueCommand(new Command(0, CommandMap.GetEnrollCount));
-    }
-
-    private void showCount(Response rsp) {
-        Log.d(TAG, "Got count: " + rsp.getParams());
-        getEnrollStatus();
-    }
-
+    /**
+     * If the id given is already enrolled, don't try to enroll it again.
+     *
+     * If not, start the enrollment process.
+     * @param rsp
+     */
     private void showEnrollStatus(Response rsp) {
         if(!rsp.getAck()) {
             Log.d(TAG, "Scanner ID not enrolled, enrolling...");

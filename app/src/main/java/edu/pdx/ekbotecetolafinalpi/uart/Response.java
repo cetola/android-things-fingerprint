@@ -2,6 +2,14 @@ package edu.pdx.ekbotecetolafinalpi.uart;
 
 import com.google.firebase.firestore.DocumentReference;
 
+/**
+ * This object can be persisted in the Firestore for easy debugging.
+ *
+ * It represents a response from the fingerprint scanner.
+ *
+ * It also associates a given command with the response, since the fingerprint scanner will not
+ * send messages without first receiving a command.
+ */
 public class Response extends Message {
     private static final String TAG = "Response";
     public static final String COLLECTION = "responses";

@@ -1,7 +1,5 @@
 package edu.pdx.ekbotecetolafinalpi.uart;
 
-import android.util.Log;
-
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentReference;
 
@@ -13,8 +11,12 @@ import java.util.Queue;
 import edu.pdx.ekbotecetolafinalpi.dao.MessageDao;
 import edu.pdx.ekbotecetolafinalpi.dao.MessageDaoImpl;
 import edu.pdx.ekbotecetolafinalpi.managers.FirestoreManager;
-import edu.pdx.ekbotecetolafinalpi.managers.FirestoreManagerImpl;
 
+/**
+ * Since we don't want to bombard the UART device with commands, setup a queue to hold any commands
+ * that the user wishes to send. Once that command is complete, save the associated response
+ * and possible data packet to the database. Save the commands to the database as they are received.
+ */
 public class CommandQueue {
     private static final String TAG = "CommandQueue";
     private Queue<Command> commands;
@@ -76,4 +78,7 @@ public class CommandQueue {
     public int getSize() {
         return commands.size();
     }
+
+    //TODO: There is an unlikely chance that a command will not have a Response.
+    //e.g. it is not formatted correctly.
 }

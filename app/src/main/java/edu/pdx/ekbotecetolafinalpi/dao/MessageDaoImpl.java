@@ -40,27 +40,6 @@ public class MessageDaoImpl implements MessageDao {
     }
 
     @Override
-    public Command getCommand(String id) {
-        DocumentReference docRef = db.collection(Command.COLLECTION).document(id);
-        docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                if (task.isSuccessful()) {
-                    DocumentSnapshot document = task.getResult();
-                    if (document.exists()) {
-                        Command cmd = document.toObject(Command.class);
-                    } else {
-                        Log.d(TAG, "No such document");
-                    }
-                } else {
-                    Log.d(TAG, "get failed with ", task.getException());
-                }
-            }
-        });
-        return null;
-    }
-
-    @Override
     public void saveResponse(Response rsp, OnSuccessListener<DocumentReference> result) {
         db.collection(Response.COLLECTION)
                 .add(rsp)
@@ -71,11 +50,6 @@ public class MessageDaoImpl implements MessageDao {
                         Log.w(TAG, "Error adding document", e);
                     }
                 });
-    }
-
-    @Override
-    public void saveDataPacket(DataPacket dp) {
-        //stub
     }
 
     @Override

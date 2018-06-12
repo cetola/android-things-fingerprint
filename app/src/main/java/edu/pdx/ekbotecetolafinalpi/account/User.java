@@ -5,6 +5,11 @@ import com.google.firebase.firestore.Exclude;
 
 import java.util.Date;
 
+/**
+ * User object which corresponds to the users document collection.
+ *
+ * Used to keep track of user details.
+ */
 public class User {
     private String id;
     private String firstName;

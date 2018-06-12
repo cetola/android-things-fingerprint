@@ -1,5 +1,8 @@
 package edu.pdx.ekbotecetolafinalpi.account;
 
+/**
+ * A simple set of data for the user. This data is easily saved to the realtime database.
+ */
 public class CurrentUser {
     public static final String COLLECTION = CurrentUser.class.getSimpleName();
     public static final String USER_ID = "userId";

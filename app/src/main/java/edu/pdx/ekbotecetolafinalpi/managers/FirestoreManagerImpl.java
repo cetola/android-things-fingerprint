@@ -30,6 +30,11 @@ public class FirestoreManagerImpl implements FirestoreManager {
         }
     }
 
+    /**
+     * Setup access to both databases. rtDb = realtime    db = Firestore
+     * @return
+     * @throws ConnectionFailedException
+     */
     private int init() throws ConnectionFailedException {
         date = new Date();
         Log.i(TAG,"Database initialization starting: " + dateFormat.format(date));

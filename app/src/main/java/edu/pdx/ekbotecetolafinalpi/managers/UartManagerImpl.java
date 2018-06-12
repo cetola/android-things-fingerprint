@@ -20,6 +20,9 @@ import edu.pdx.ekbotecetolafinalpi.uart.DataPacket;
 import edu.pdx.ekbotecetolafinalpi.uart.Message;
 import edu.pdx.ekbotecetolafinalpi.uart.Response;
 
+/**
+ * {@link UartManager} implementation, specifically for a fingerprint scanner.
+ */
 public class UartManagerImpl extends ThreadedManager implements UartManager {
     private static final String TAG = "UartManagerImpl";
     private UartDevice uartDevice;
@@ -31,12 +34,15 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
     private static final int CHUNK_SIZE = 512;
     private ByteArrayOutputStream data = new ByteArrayOutputStream();
     private boolean waiting = false;
-    private int waitCount = 0;
     private int oldDataSize;
     CommandQueue q;
     DeviceInfo info;
     private ResponseReadyListener responseReadyListener;
     private DeviceInfoReadyListener deviceInfoReadyListener;
+
+    //for debugging
+    @SuppressWarnings("unused")
+    private int waitCount = 0;
 
     public UartManagerImpl(FirestoreManager dbManager) {
         pm = PeripheralManager.getInstance();
@@ -65,6 +71,10 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
         }
     };
 
+    /**
+     * Runnable for the looper thread. The readData function should be called anytime there is
+     * data in the UART's buffer.
+     */
     private Runnable uartRunnable = new Runnable() {
         @Override
         public void run() {
@@ -72,7 +82,9 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
         }
     };
 
-    //TODO: using a ByteArrayOutputStream in a thread, is this wise?
+    /**
+     * While there is data in the buffer, read it out into a {@link ByteArrayOutputStream}.
+     */
     private void readData() {
         if (uartDevice != null) {
             try {
@@ -90,8 +102,14 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
         }
     }
 
-    //TODO: think about this.
-    //My guess is that when we transfer huge data (jpg) this will be necessary
+    /**
+     * This function is called after data is read from the UART. Sometimes data will take a while
+     * (>100ms) to fill the buffer back up. At slower speeds (9600 baud) we want to wait a bit
+     * before we decide that the UART is done talking.
+     *
+     * Also, we might get the call to "wait" when we are already waiting. If so, just keep waiting,
+     * but don't spin up another {@link TimerTask}.
+     */
     private void waitForData() {
         waitCount++;
         if(!waiting) {
@@ -107,6 +125,11 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
         }
     }
 
+    /**
+     * If the data size is still growing then we are still reading from the buffer.
+     * If not, the buffer has probably been filled with the appropriate {@link Response} or
+     * {@link DataPacket}.
+     */
     private void checkDataSize() {
         if(data.size() > oldDataSize) {
             waiting = false;
@@ -120,6 +143,9 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
         }
     }
 
+    /**
+     * Process a {@link Response} or a {@link DataPacket} as appropriate.
+     */
     private void process() {
         if(data.size() == Message.MSG_SIZE) {
             processResponse();
@@ -131,12 +157,22 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
         }
     }
 
+    /**
+     * Process a {@link Response} by adding the bytes to a new object.
+     */
     private void processResponse() {
         Response rsp = new Response();
         rsp.addBytes(data.toByteArray());
         recievedResponse(rsp);
     }
 
+    /**
+     * A {@link DataPacket} is actually a {@link Response} followed by data.
+     * First, we need to process the response, parsing out the correct bits.
+     * Then, we need to process the data packet based on how many bits we got.
+     * Today, this only processes the enroll data, but in the future this could
+     * process all the possible data packets that the scanner can send.
+     */
     private void processDataPacket() {
         Response rsp = new Response();
         rsp.addRangeBytes(data.toByteArray(), 0, Message.MSG_SIZE - 1);
@@ -158,6 +194,11 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
         return (data.size() - Message.MSG_SIZE) == DataPacket.ENROLL_SIZE;
     }
 
+    /**
+     * If the {@link DataPacket} describes the device, create a {@link DeviceInfo} and fill it
+     * with the data from the UART. Then, call the listener's onDeviceInfoReady function.
+     *
+     */
     private void setDeviceInfo() {
         DataPacket dp;
         dp = new DataPacket(DataPacket.MOD_INFO_SIZE);
@@ -166,10 +207,18 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
         deviceInfoReadyListener.onDeviceInfoReady(info);
     }
 
+    /**
+     * Convenience method to call the correct command to get the device info. This also happens to
+     * open the Fingerprint Scanner. Handy.
+     */
     public void getDeviceInfo() {
         queueCommand(new Command(1, CommandMap.Open));
     }
 
+    /**
+     * Adds the response to the {@link CommandQueue} and calls the listener's onResponseReady function.
+     * @param rsp
+     */
     private void recievedResponse(Response rsp) {
         q.addResponse(rsp);
         if(responseReadyListener != null) {
@@ -199,6 +248,7 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
             getInputHandler().post(uartRunnable);
         } catch (IOException e) {
             Log.e(TAG, "Unable to open UART device", e);
+            return -1;
 
         }
         return 0;
@@ -210,6 +260,10 @@ public class UartManagerImpl extends ThreadedManager implements UartManager {
         return q.getSize();
     }
 
+    /**
+     * If there are commands in the queue, and we are not waiting for data to finish coming in to
+     * the UART, send the next command in the {@link CommandQueue}.
+     */
     private void processQueue() {
         if(q.getSize() > 0 && !waiting) {
             sendCommand(q.getNextCommand());

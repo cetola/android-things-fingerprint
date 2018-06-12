@@ -4,6 +4,15 @@ import android.util.Log;
 
 import edu.pdx.ekbotecetolafinalpi.account.DeviceInfo;
 
+/**
+ * Data packets are much longer messages that contain different kinds of data depending on the
+ * associated command. For this reason, we store the command as part of the object.
+ *
+ * Currently the only two DataPackets we recognize are the Device Info (Open + param nonzero) and
+ * the Enrollment "information" (Enroll scanner id == -1).
+ *
+ * In the future we could add many more data packets to this list.
+ */
 public class DataPacket extends Message {
     private static final String TAG = "DataPacket";
     public static final int MOD_INFO_SIZE = 30;

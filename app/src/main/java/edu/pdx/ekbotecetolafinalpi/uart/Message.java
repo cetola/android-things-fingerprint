@@ -11,6 +11,11 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Date;
 
+/**
+ * The base message class, this class is the parent to the {@link Command}, {@link Response} and the
+ * {@link DataPacket}. It contains fields common to all three objects, as well as some convenience
+ * methods for getting parameters.
+ */
 @IgnoreExtraProperties
 public class Message {
     private static final String TAG = "Message";
@@ -62,6 +67,10 @@ public class Message {
         return UartUtils.bytesToHex(data.array(), data.array().length);
     }
 
+    /**
+     * Sets the parameter based on an int value.
+     * @param in
+     */
     public void setParams(int in) {
         params[0] = (byte)(in & 0x000000ff);
         params[1] = (byte)((in & 0x0000ff00) >> 8);
@@ -73,6 +82,13 @@ public class Message {
         updateStringData();
     }
 
+    /**
+     * Parses the bits to find the parameter and returns their int value.
+     *
+     * Since the local "params" might not have been filled out yet, parse the bits and fill that
+     * value before returning the int value.
+     * @return
+     */
     public int getParams() {
         int rtn = 0;
         for(int i = PARAM_OFFSET; i < PARAM_OFFSET+4; i++) {
@@ -85,6 +101,9 @@ public class Message {
         return rtn;
     }
 
+    /**
+     * Gets a string representation of the bits in the array. Handy for debugging.
+     */
     protected void updateStringData() {
         this.strData = UartUtils.bytesToHex(data.array(), data.array().length);
     }

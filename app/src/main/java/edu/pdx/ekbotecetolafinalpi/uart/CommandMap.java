@@ -3,6 +3,9 @@ package edu.pdx.ekbotecetolafinalpi.uart;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * All of the possible commands and a map for easy access to their string value.
+ */
 public class CommandMap {
     public static final Character NotSet                 = 0x00;        // Default value for enum. Scanner will return error if sent this.
     public static final Character Open                   = 0x01;        // Open Initialization

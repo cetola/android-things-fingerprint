@@ -4,6 +4,11 @@ import com.google.firebase.Timestamp;
 
 import java.util.Date;
 
+/**
+ * History object which corresponds to the history document collection.
+ *
+ * These objects store a record of who "unlocked the box" and when.
+ */
 public class History {
 
     public static final String COLLECTION = "history";

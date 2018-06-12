@@ -2,7 +2,9 @@ package edu.pdx.ekbotecetolafinalpi.account;
 
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.Exclude;
-
+/**
+ * Enrollment object which corresponds to the enrollments document collection.
+ */
 public class Enrollment {
     private String id;
     private int scannerId;

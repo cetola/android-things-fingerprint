@@ -3,6 +3,9 @@ package edu.pdx.ekbotecetolafinalpi.uart;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * All of the possible errors that could be thrown and a map for easy access to their string values.
+ */
 public class ErrorMap {
     public static final Character NO_ERROR                     = 0x0000;  // Default value. no error
     public static final Character NACK_TIMEOUT                 = 0x1001;  // Obsolete, capture timeout

@@ -1,5 +1,8 @@
 package edu.pdx.ekbotecetolafinalpi.realtime;
 
+/**
+ * A static list of messages that the Realtime database should get.
+ */
 public class RegisterFingerprintMsg {
     public static final String COLLECTION = RegisterFingerprintMsg.class.getSimpleName();
     public static final String NONE = "None";
