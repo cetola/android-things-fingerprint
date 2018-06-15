@@ -24,4 +24,12 @@ public interface EnrollmentDao {
      * @param results
      */
     void getEnrollments(OnSuccessListener<QuerySnapshot> results);
+
+    /**
+     * Get all the enrollments for a specific user. Very handy if you  want to delete all those
+     * enrollments.
+     * @param username
+     * @param results
+     */
+    void getUserEnrollments(String username, OnSuccessListener<QuerySnapshot> results);
 }

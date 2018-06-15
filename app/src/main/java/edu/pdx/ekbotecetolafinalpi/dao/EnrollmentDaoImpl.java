@@ -47,4 +47,16 @@ public class EnrollmentDaoImpl implements EnrollmentDao {
                     }
                 });
     }
+
+    @Override
+    public void getUserEnrollments(String username, OnSuccessListener<QuerySnapshot> results) {
+        db.collection(Enrollment.COLLECTION).whereEqualTo(Enrollment.USER_NAME, username)
+                .get().addOnSuccessListener(results)
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.e(TAG, "Failed to query database for object(s): " + User.COLLECTION);
+                    }
+                });
+    }
 }

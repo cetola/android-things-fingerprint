@@ -12,6 +12,7 @@ public class Enrollment {
     private User user;
     private DocumentReference userRef;
     public static final String COLLECTION = "enrollments";
+    public static final String USER_NAME = "userName";
 
     public Enrollment() {
 
